@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.text-input-wrapper {
+  position: relative;
+}
+
+input:invalid {
+  border: red solid 1px;
+  background-color: rgba(255, 0, 0, 0.1);
+}
+
+.text-input-has-prepend {
+  padding-left: 36px;
+}
+
+.text-input-prepend {
+  position: absolute;
+  top: 0;
+  padding: 0 8px;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  font-weight: bold;
+  border-right: 1px solid rgb(148 163 184 / var(--tw-border-opacity));
+}
