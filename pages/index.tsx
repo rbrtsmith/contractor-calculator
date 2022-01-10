@@ -54,7 +54,7 @@ const Home = () => {
         <p>For the 2021-2022 tax year (Outside IR35 only for now…)</p>
         <div className="w-full pt-10 max-w-xl text-left mx-auto">
           <TextInput
-            label="Number of directors (dividends evently split)"
+            label="Number of directors (dividends evenly split)"
             max="9"
             min="1"
             type="number"
