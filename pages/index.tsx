@@ -112,6 +112,24 @@ const Home = () => {
               MAX_TAX_EFFICIENT_SALARY_PENCE
             )} is the most tax efficient)`}
             prepend="£"
+            append={
+              <button
+                className="h-full bg-blue-500 hover:bg-blue-700 text-white px-2 font-bold"
+                onClick={() => {
+                  const evt = {
+                    currentTarget: {
+                      name: "salaryDrawdown",
+                      value: convertToPounds(
+                        MAX_TAX_EFFICIENT_SALARY_PENCE
+                      ).toFixed(2),
+                    },
+                  } as any as React.FormEvent<HTMLInputElement>;
+                  handleChange(evt);
+                }}
+              >
+                Max out
+              </button>
+            }
             type="number"
             step="0.01"
             min={0}
@@ -127,6 +145,24 @@ const Home = () => {
               maximumAllowableDividendDrawdown
             )})`}
             prepend="£"
+            append={
+              <button
+                className="h-full bg-blue-500 hover:bg-blue-700 text-white px-2 font-bold"
+                onClick={() => {
+                  const evt = {
+                    currentTarget: {
+                      name: "dividendDrawdown",
+                      value: convertToPounds(
+                        maximumAllowableDividendDrawdown
+                      ).toFixed(2),
+                    },
+                  } as any as React.FormEvent<HTMLInputElement>;
+                  handleChange(evt);
+                }}
+              >
+                Max out
+              </button>
+            }
             step="0.01"
             type="number"
             min={0}
@@ -138,7 +174,7 @@ const Home = () => {
           />
           <ul>
             <li className="mb-2">
-              <strong>Total revenue:</strong> {currencyFormat(totalRevenue)}
+              <strong>Gross revenue:</strong> {currencyFormat(totalRevenue)}
             </li>
             <li className="mb-2">
               <strong>Corporation tax due:</strong>{" "}
@@ -150,7 +186,7 @@ const Home = () => {
             </li>
             <li className="mb-2">
               <strong>
-                Total taxable income
+                Taxable income
                 {Number(numberOfDirectors) > 1 ? " per director:" : ":"}
               </strong>{" "}
               {currencyFormat(totalTaxableIncome)}
@@ -165,7 +201,7 @@ const Home = () => {
             </li>
             <li className="mb-2">
               <strong>
-                Tax to pay on dividends
+                Tax due on dividends
                 {Number(numberOfDirectors) > 1 ? " per director:" : ":"}
               </strong>{" "}
               <em>(First £2,000.00 is tax free)</em>
@@ -195,7 +231,7 @@ const Home = () => {
             <li className="mb-2">
               {Number(numberOfDirectors) > 1 ? (
                 <>
-                  <strong>Total after tax pay per director:</strong>{" "}
+                  <strong>Net pay per director:</strong>{" "}
                   {currencyFormat(totalAfterTaxPay)}
                   <div>
                     {currencyFormat(
@@ -206,8 +242,7 @@ const Home = () => {
                 </>
               ) : (
                 <>
-                  <strong>Total after tax pay:</strong>{" "}
-                  {currencyFormat(totalAfterTaxPay)}
+                  <strong>Net pay:</strong> {currencyFormat(totalAfterTaxPay)}
                 </>
               )}
             </li>

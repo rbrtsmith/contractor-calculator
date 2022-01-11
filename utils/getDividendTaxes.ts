@@ -123,6 +123,7 @@ export const getDividendTaxes = ({
       `plus additional tax of ${HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE}% on the next`,
       amountAthigherRate / 100
     );
+    // The band reduces
     return {
       basic: lowerTaxToPay,
       higher: higherTaxToPay,
