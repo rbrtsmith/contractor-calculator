@@ -1,41 +1,45 @@
-import {
-  DIVIDEND_TAX_FREE_ALLOWANCE_PENCE,
-  HIGHER_DIVIDEND_TAX_THRESHOLD_PENCE,
-  BASIC_DIVIDEND_TAX_RATE_PERCENTAGE,
-  HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE,
-  MAXIMUM_FULL_PERSONAL_ALLOWANCE_THRESHOLD_PENCE,
-  TAX_FREE_PERSONAL_ALLOWANCE_PENCE,
-  ADDITIONAL_DIVIDEND_TAX_THRESHOLD_PENCE,
-} from "../constants";
-
-import { convertToPounds } from "./convertToPounds";
-
-const getAmountOfPersonalAllowanceLeft = (
-  dividendDrawdown: number,
-  salaryDrawdown: number
-) => {
-  const amountOver100k =
-    dividendDrawdown +
-    salaryDrawdown -
-    MAXIMUM_FULL_PERSONAL_ALLOWANCE_THRESHOLD_PENCE;
-
-  if (amountOver100k <= 0) {
-    return TAX_FREE_PERSONAL_ALLOWANCE_PENCE - salaryDrawdown;
-  }
-
-  const amountOfPersonalAllowanceLeft =
-    TAX_FREE_PERSONAL_ALLOWANCE_PENCE - amountOver100k / 2 - salaryDrawdown;
-
-  return amountOfPersonalAllowanceLeft > 0 ? amountOfPersonalAllowanceLeft : 0;
-};
+import { Taxes } from "../constants";
 
 export const getDividendTaxes = ({
   dividendDrawdown,
   salaryDrawdown,
+  taxes,
 }: {
   dividendDrawdown: number;
   salaryDrawdown: number;
+  taxes: Taxes;
 }) => {
+  const {
+    DIVIDEND_TAX_FREE_ALLOWANCE_PENCE,
+    HIGHER_DIVIDEND_TAX_THRESHOLD_PENCE,
+    BASIC_DIVIDEND_TAX_RATE_PERCENTAGE,
+    HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE,
+    MAXIMUM_FULL_PERSONAL_ALLOWANCE_THRESHOLD_PENCE,
+    TAX_FREE_PERSONAL_ALLOWANCE_PENCE,
+    ADDITIONAL_DIVIDEND_TAX_THRESHOLD_PENCE,
+  } = taxes;
+
+  const getAmountOfPersonalAllowanceLeft = (
+    dividendDrawdown: number,
+    salaryDrawdown: number
+  ) => {
+    const amountOver100k =
+      dividendDrawdown +
+      salaryDrawdown -
+      MAXIMUM_FULL_PERSONAL_ALLOWANCE_THRESHOLD_PENCE;
+
+    if (amountOver100k <= 0) {
+      return TAX_FREE_PERSONAL_ALLOWANCE_PENCE - salaryDrawdown;
+    }
+
+    const amountOfPersonalAllowanceLeft =
+      TAX_FREE_PERSONAL_ALLOWANCE_PENCE - amountOver100k / 2 - salaryDrawdown;
+
+    return amountOfPersonalAllowanceLeft > 0
+      ? amountOfPersonalAllowanceLeft
+      : 0;
+  };
+
   const amountOfPersonalAllowanceLeft = getAmountOfPersonalAllowanceLeft(
     dividendDrawdown,
     salaryDrawdown

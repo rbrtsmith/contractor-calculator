@@ -32,8 +32,8 @@ test.each`
 `(
   "returns $expected when salaryDrawdown is $salaryDrawdown and dividendDrawdown is $dividendDrawdown",
   ({ salaryDrawdown, dividendDrawdown, expected }) => {
-    expect(getDividendTaxes({ salaryDrawdown, dividendDrawdown })).toEqual(
-      expected
-    );
+    expect(
+      getDividendTaxes({ salaryDrawdown, dividendDrawdown, taxYear: "2021/22" })
+    ).toEqual(expected);
   }
 );

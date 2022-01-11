@@ -1,20 +1,23 @@
 import { useForm, useCalculate } from "../hooks";
-import { TextInput } from "../components";
+import { TextInput, SelectInput } from "../components";
 import { currencyFormat, convertToPounds } from "../utils";
-import {
-  MAX_TAX_EFFICIENT_SALARY_PENCE,
-  TAX_FREE_PERSONAL_ALLOWANCE_PENCE,
-} from "../constants";
+
+import { TAXES } from "../constants";
+
+const taxYears = ["2021/22", "2022/23"];
 
 const Home = () => {
   const [values, handleChange] = useForm({
-    numberOfDaysWorked: "252",
-    dailyRate: "750.00",
+    numberOfDaysWorked: "230",
+    dailyRate: "700.00",
     numberOfDirectors: "1",
-    salaryDrawdown: `${convertToPounds(MAX_TAX_EFFICIENT_SALARY_PENCE)}.00`,
+    salaryDrawdown: `${convertToPounds(
+      TAXES[taxYears[0]].MAX_TAX_EFFICIENT_SALARY_PENCE
+    )}.00`,
     generalExpenses: "1200.00",
     pensionContributions: "0.00",
     dividendDrawdown: "10000.00",
+    taxYear: taxYears[0],
   });
 
   const {
@@ -25,7 +28,18 @@ const Home = () => {
     generalExpenses,
     pensionContributions,
     dividendDrawdown,
+    taxYear,
   } = values;
+
+  const taxes = TAXES[taxYear];
+
+  const {
+    TAX_FREE_PERSONAL_ALLOWANCE_PENCE,
+    MAX_TAX_EFFICIENT_SALARY_PENCE,
+    BASIC_DIVIDEND_TAX_RATE_PERCENTAGE,
+    HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE,
+    ADDITIONAL_DIVIDEND_TAX_RATE_PERCENTAGE,
+  } = taxes;
 
   const {
     totalRevenue,
@@ -43,6 +57,7 @@ const Home = () => {
     generalExpenses,
     pensionContributions,
     dividendDrawdown,
+    taxes,
   });
 
   return (
@@ -53,6 +68,15 @@ const Home = () => {
         </h1>
         <p>For the 2021-2022 tax year (Outside IR35 only for now…)</p>
         <div className="w-full pt-10 max-w-xl text-left mx-auto">
+          <SelectInput
+            label="Tax year"
+            name="taxYear"
+            onChange={handleChange}
+            options={taxYears.map((year) => ({
+              label: year,
+              value: year,
+            }))}
+          />
           <TextInput
             label="Number of directors (dividends evenly split)"
             max="9"
@@ -207,13 +231,15 @@ const Home = () => {
               <em>(First £2,000.00 is tax free)</em>
               <ul className="list-disc list-inside">
                 <li>
-                  Basic (7.5%): {currencyFormat(dividendTaxBreakdown.basic)}
+                  Basic ({BASIC_DIVIDEND_TAX_RATE_PERCENTAGE}%):{" "}
+                  {currencyFormat(dividendTaxBreakdown.basic)}
                 </li>
                 <li>
-                  Higher (32.5%): {currencyFormat(dividendTaxBreakdown.higher)}
+                  Higher ({HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE}%):{" "}
+                  {currencyFormat(dividendTaxBreakdown.higher)}
                 </li>
                 <li>
-                  Additional (38.1%):{" "}
+                  Additional ({ADDITIONAL_DIVIDEND_TAX_RATE_PERCENTAGE}%):{" "}
                   {currencyFormat(dividendTaxBreakdown.additional)}
                 </li>
                 <li>
@@ -232,13 +258,9 @@ const Home = () => {
               {Number(numberOfDirectors) > 1 ? (
                 <>
                   <strong>Net pay per director:</strong>{" "}
-                  {currencyFormat(totalAfterTaxPay)}
-                  <div>
-                    {currencyFormat(
-                      totalAfterTaxPay * Number(numberOfDirectors)
-                    )}{" "}
-                    (Combined)
-                  </div>
+                  {currencyFormat(totalAfterTaxPay)} (
+                  {currencyFormat(totalAfterTaxPay * Number(numberOfDirectors))}{" "}
+                  when combined)
                 </>
               ) : (
                 <>

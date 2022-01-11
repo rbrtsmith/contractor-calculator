@@ -6,9 +6,11 @@ type Values = {
 
 export const useForm = (
   initialValues: Values
-): [Values, (e: React.FormEvent<HTMLInputElement>) => void] => {
+): [
+  Values,
+  (e: React.FormEvent<HTMLInputElement | HTMLSelectElement>) => void
+] => {
   const [values, setValues] = useState(initialValues);
-
   return [
     values,
     (e) =>
