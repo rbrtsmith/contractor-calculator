@@ -1,5 +1,6 @@
 import { getDividendTaxes } from "./getDividendTaxes";
 import { convertToPence } from "./convertToPence";
+import { TAXES } from "../constants";
 
 // test("it works", () => {
 //   expect(
@@ -33,7 +34,11 @@ test.each`
   "returns $expected when salaryDrawdown is $salaryDrawdown and dividendDrawdown is $dividendDrawdown",
   ({ salaryDrawdown, dividendDrawdown, expected }) => {
     expect(
-      getDividendTaxes({ salaryDrawdown, dividendDrawdown, taxYear: "2021/22" })
+      getDividendTaxes({
+        salaryDrawdown,
+        dividendDrawdown,
+        taxes: TAXES["2021/22"],
+      })
     ).toEqual(expected);
   }
 );

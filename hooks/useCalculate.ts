@@ -1,9 +1,5 @@
 import { convertToPence, getDividendTaxes } from "../utils";
-import {
-  CORPORATION_TAX_PERCENTAGE,
-  DIVIDEND_TAX_FREE_ALLOWANCE_PENCE,
-  Taxes,
-} from "../constants";
+import { Taxes } from "../constants";
 
 type Inputs = {
   numberOfDaysWorked: string;
@@ -20,13 +16,15 @@ const getCorportationTaxDue = ({
   totalRevenue,
   totalExpenses,
   totalSalaryDrawdown,
+  taxes,
 }: {
   totalRevenue: number;
   totalExpenses: number;
   totalSalaryDrawdown: number;
+  taxes: Taxes;
 }) => {
   const amountTaxable = totalRevenue - totalSalaryDrawdown - totalExpenses;
-  return amountTaxable * (CORPORATION_TAX_PERCENTAGE / 100);
+  return amountTaxable * (taxes.CORPORATION_TAX_PERCENTAGE / 100);
 };
 
 const getMaximumAllowableDividendDrawdown = ({
@@ -72,6 +70,7 @@ const compute = ({
     totalRevenue,
     totalExpenses,
     totalSalaryDrawdown,
+    taxes,
   });
 
   const maximumAllowableDividendDrawdown = getMaximumAllowableDividendDrawdown({
@@ -83,7 +82,7 @@ const compute = ({
   });
 
   const totalTaxableIncome =
-    salaryDrawdown + dividendDrawdown - DIVIDEND_TAX_FREE_ALLOWANCE_PENCE;
+    salaryDrawdown + dividendDrawdown - taxes.DIVIDEND_TAX_FREE_ALLOWANCE_PENCE;
 
   const dividendTaxBreakdown = getDividendTaxes({
     dividendDrawdown,

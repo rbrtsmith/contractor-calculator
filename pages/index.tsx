@@ -62,11 +62,10 @@ const Home = () => {
 
   return (
     <main>
-      <div className="flex flex-col justify-center text-center pt-10">
-        <h1 className="text-[72px] bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-500 font-extrabold">
+      <div className="flex flex-col justify-center text-center pt-10 px-4">
+        <h1 className="leading-none text-[72px] bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-500 font-extrabold">
           Contractor income calculator
         </h1>
-        <p>For the 2021-2022 tax year (Outside IR35 only for now…)</p>
         <div className="w-full pt-10 max-w-xl text-left mx-auto">
           <SelectInput
             label="Tax year"
@@ -252,7 +251,8 @@ const Home = () => {
               <strong>
                 Tax to pay on salary
                 {Number(numberOfDirectors) > 1 ? " per director:" : ":"}
-              </strong>
+              </strong>{" "}
+              £0.00
             </li>
             <li className="mb-2">
               {Number(numberOfDirectors) > 1 ? (
