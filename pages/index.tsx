@@ -1,5 +1,5 @@
 import { useForm, useCalculate } from "../hooks";
-import { TextInput, SelectInput } from "../components";
+import { TextInput, SelectInput, Button } from "../components";
 import { currencyFormat, convertToPounds } from "../utils";
 
 import { TAXES } from "../constants";
@@ -59,7 +59,6 @@ const Home = () => {
     dividendDrawdown,
     taxes,
   });
-
   return (
     <main>
       <div className="flex flex-col justify-center text-center pt-10 px-4">
@@ -136,8 +135,11 @@ const Home = () => {
             )} is the most tax efficient)`}
             prepend="£"
             append={
-              <button
-                className="h-full bg-blue-500 hover:bg-blue-700 text-white px-2 font-bold"
+              <Button
+                disabled={
+                  MAX_TAX_EFFICIENT_SALARY_PENCE ===
+                  Number(salaryDrawdown) * 100
+                }
                 onClick={() => {
                   const evt = {
                     currentTarget: {
@@ -151,7 +153,7 @@ const Home = () => {
                 }}
               >
                 Max out
-              </button>
+              </Button>
             }
             type="number"
             step="0.01"
@@ -169,8 +171,11 @@ const Home = () => {
             )})`}
             prepend="£"
             append={
-              <button
-                className="h-full bg-blue-500 hover:bg-blue-700 text-white px-2 font-bold"
+              <Button
+                disabled={
+                  maximumAllowableDividendDrawdown ===
+                  Number(dividendDrawdown) * 100
+                }
                 onClick={() => {
                   const evt = {
                     currentTarget: {
@@ -184,7 +189,7 @@ const Home = () => {
                 }}
               >
                 Max out
-              </button>
+              </Button>
             }
             step="0.01"
             type="number"
@@ -247,13 +252,13 @@ const Home = () => {
                 </li>
               </ul>
             </li>
-            <li className="mb-2">
+            {/* <li className="mb-2">
               <strong>
                 Tax to pay on salary
                 {Number(numberOfDirectors) > 1 ? " per director:" : ":"}
               </strong>{" "}
               £0.00
-            </li>
+            </li> */}
             <li className="mb-2">
               {Number(numberOfDirectors) > 1 ? (
                 <>

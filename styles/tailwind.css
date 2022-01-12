@@ -42,3 +42,9 @@ input:invalid {
   font-weight: bold;
   border-left: 1px solid rgb(148 163 184 / var(--tw-border-opacity));
 }
+
+button[disabled],
+button[disabled]:hover,
+button[disabled]:focus {
+  background-color: grey;
+}

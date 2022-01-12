@@ -393,9 +393,6 @@ Ensure the default browser behavior of the `hidden` attribute.
 .mb-6 {
   margin-bottom: 1.5rem;
 }
-.mb-4 {
-  margin-bottom: 1rem;
-}
 .block {
   display: block;
 }
@@ -454,13 +451,13 @@ Ensure the default browser behavior of the `hidden` attribute.
 .p-2 {
   padding: 0.5rem;
 }
-.px-2 {
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
-}
 .px-4 {
   padding-left: 1rem;
   padding-right: 1rem;
+}
+.px-2 {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
 }
 .pt-10 {
   padding-top: 2.5rem;
@@ -533,6 +530,12 @@ input:invalid {
   justify-content: center;
   font-weight: bold;
   border-left: 1px solid rgb(148 163 184 / var(--tw-border-opacity));
+}
+
+button[disabled],
+button[disabled]:hover,
+button[disabled]:focus {
+  background-color: grey;
 }
 
 .hover\:bg-blue-700:hover {
