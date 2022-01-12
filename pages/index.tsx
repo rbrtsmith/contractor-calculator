@@ -9,14 +9,14 @@ const taxYears = ["2021/22", "2022/23"];
 const Home = () => {
   const [values, handleChange] = useForm({
     numberOfDaysWorked: "230",
-    dailyRate: "700.00",
+    dailyRate: "500.00",
     numberOfDirectors: "1",
     salaryDrawdown: `${convertToPounds(
       TAXES[taxYears[0]].MAX_TAX_EFFICIENT_SALARY_PENCE
     )}.00`,
     generalExpenses: "1200.00",
     pensionContributions: "0.00",
-    dividendDrawdown: "10000.00",
+    dividendDrawdown: "85017.60",
     taxYear: taxYears[0],
   });
 
@@ -59,12 +59,14 @@ const Home = () => {
     dividendDrawdown,
     taxes,
   });
+
   return (
     <main>
       <div className="flex flex-col justify-center text-center pt-10 px-4">
-        <h1 className="leading-none text-[72px] bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-500 font-extrabold">
+        <h1 className="leading-none text-[72px] bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-500 font-extrabold mb-6">
           Contractor income calculator
         </h1>
+        <p className="mb-0">Outside IR35 only for now…</p>
         <div className="w-full pt-10 max-w-xl text-left mx-auto">
           <SelectInput
             label="Tax year"
@@ -138,7 +140,7 @@ const Home = () => {
               <Button
                 disabled={
                   MAX_TAX_EFFICIENT_SALARY_PENCE ===
-                  Number(salaryDrawdown) * 100
+                  Math.floor(Number(salaryDrawdown) * 100)
                 }
                 onClick={() => {
                   const evt = {
@@ -174,7 +176,7 @@ const Home = () => {
               <Button
                 disabled={
                   maximumAllowableDividendDrawdown ===
-                  Number(dividendDrawdown) * 100
+                  Math.floor(Number(dividendDrawdown) * 100)
                 }
                 onClick={() => {
                   const evt = {
