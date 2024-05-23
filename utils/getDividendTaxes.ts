@@ -120,13 +120,13 @@ export const getDividendTaxes = ({
       amountAtLowerRate * (BASIC_DIVIDEND_TAX_RATE_PERCENTAGE / 100);
     const higherTaxToPay =
       amountAthigherRate * (HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE / 100);
-    console.log("amountOfPersonalAllowanceLeft", amountOfPersonalAllowanceLeft);
-    console.log(
-      `youll pay ${BASIC_DIVIDEND_TAX_RATE_PERCENTAGE}% tax on the next`,
-      amountAtLowerRate / 100,
-      `plus additional tax of ${HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE}% on the next`,
-      amountAthigherRate / 100
-    );
+    // console.log("amountOfPersonalAllowanceLeft", amountOfPersonalAllowanceLeft);
+    // console.log(
+    //   `youll pay ${BASIC_DIVIDEND_TAX_RATE_PERCENTAGE}% tax on the next`,
+    //   amountAtLowerRate / 100,
+    //   `plus additional tax of ${HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE}% on the next`,
+    //   amountAthigherRate / 100
+    // );
     // The band reduces
     return {
       basic: lowerTaxToPay,

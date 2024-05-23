@@ -4,20 +4,20 @@ import { currencyFormat, convertToPounds } from "../utils";
 
 import { TAXES } from "../constants";
 
-const taxYears = ["2021/22", "2022/23"];
+const taxYears = ["2021/22", "2022/23", "2023/24", "2024/25"];
 
 const Home = () => {
   const [values, handleChange] = useForm({
     numberOfDaysWorked: "230",
-    dailyRate: "500.00",
+    dailyRate: "600.00",
     numberOfDirectors: "1",
     salaryDrawdown: `${convertToPounds(
       TAXES[taxYears[0]].MAX_TAX_EFFICIENT_SALARY_PENCE
     )}.00`,
     generalExpenses: "1200.00",
     pensionContributions: "0.00",
-    dividendDrawdown: "85017.60",
-    taxYear: taxYears[0],
+    dividendDrawdown: "0",
+    taxYear: taxYears[taxYears.length - 1],
   });
 
   const {
@@ -30,6 +30,8 @@ const Home = () => {
     dividendDrawdown,
     taxYear,
   } = values;
+
+  console.log("taxYear", taxYear);
 
   const taxes = TAXES[taxYear];
 
@@ -71,6 +73,7 @@ const Home = () => {
           <SelectInput
             label="Tax year"
             name="taxYear"
+            value={taxYear}
             onChange={handleChange}
             options={taxYears.map((year) => ({
               label: year,
