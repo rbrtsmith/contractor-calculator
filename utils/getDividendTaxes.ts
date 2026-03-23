@@ -14,157 +14,54 @@ export const getDividendTaxes = ({
     HIGHER_DIVIDEND_TAX_THRESHOLD_PENCE,
     BASIC_DIVIDEND_TAX_RATE_PERCENTAGE,
     HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE,
+    ADDITIONAL_DIVIDEND_TAX_RATE_PERCENTAGE,
     MAXIMUM_FULL_PERSONAL_ALLOWANCE_THRESHOLD_PENCE,
     TAX_FREE_PERSONAL_ALLOWANCE_PENCE,
     ADDITIONAL_DIVIDEND_TAX_THRESHOLD_PENCE,
   } = taxes;
 
-  const getAmountOfPersonalAllowanceLeft = (
-    dividendDrawdown: number,
-    salaryDrawdown: number
-  ) => {
-    const amountOver100k =
-      dividendDrawdown +
-      salaryDrawdown -
-      MAXIMUM_FULL_PERSONAL_ALLOWANCE_THRESHOLD_PENCE;
+  const totalIncome = salaryDrawdown + dividendDrawdown;
 
-    if (amountOver100k <= 0) {
-      return TAX_FREE_PERSONAL_ALLOWANCE_PENCE - salaryDrawdown;
-    }
+  // Personal allowance, tapered by £1 for every £2 over £100k
+  const amountOver100k = totalIncome - MAXIMUM_FULL_PERSONAL_ALLOWANCE_THRESHOLD_PENCE;
+  const personalAllowance =
+    amountOver100k <= 0
+      ? TAX_FREE_PERSONAL_ALLOWANCE_PENCE
+      : Math.max(0, TAX_FREE_PERSONAL_ALLOWANCE_PENCE - amountOver100k / 2);
 
-    const amountOfPersonalAllowanceLeft =
-      TAX_FREE_PERSONAL_ALLOWANCE_PENCE - amountOver100k / 2 - salaryDrawdown;
-
-    return amountOfPersonalAllowanceLeft > 0
-      ? amountOfPersonalAllowanceLeft
-      : 0;
-  };
-
-  const amountOfPersonalAllowanceLeft = getAmountOfPersonalAllowanceLeft(
-    dividendDrawdown,
-    salaryDrawdown
-  );
-
-  const taxFreeDividendsLeft =
-    amountOfPersonalAllowanceLeft + DIVIDEND_TAX_FREE_ALLOWANCE_PENCE;
-  const taxableDividends =
-    dividendDrawdown - taxFreeDividendsLeft < 0
-      ? 0
-      : dividendDrawdown - taxFreeDividendsLeft;
+  // Tax-free dividends = any personal allowance remaining after salary + dividend allowance
+  const personalAllowanceForDividends = Math.max(0, personalAllowance - salaryDrawdown);
+  const taxFreeDividends = personalAllowanceForDividends + DIVIDEND_TAX_FREE_ALLOWANCE_PENCE;
+  const taxableDividends = Math.max(0, dividendDrawdown - taxFreeDividends);
 
   if (taxableDividends === 0) {
-    return {
-      basic: 0,
-      higher: 0,
-      additional: 0,
-      total: 0,
-    };
-  }
-  if (
-    taxableDividends <=
-    HIGHER_DIVIDEND_TAX_THRESHOLD_PENCE - DIVIDEND_TAX_FREE_ALLOWANCE_PENCE
-  ) {
-    // below higher rate tax threshold
-    const taxToPay =
-      taxableDividends * (BASIC_DIVIDEND_TAX_RATE_PERCENTAGE / 100);
-    return {
-      basic: taxToPay,
-      higher: 0,
-      additional: 0,
-      total: taxToPay,
-    };
+    return { basic: 0, higher: 0, additional: 0, total: 0 };
   }
 
-  const amountOverFullPersonalAllowanceThreshold =
-    salaryDrawdown +
-    dividendDrawdown -
-    MAXIMUM_FULL_PERSONAL_ALLOWANCE_THRESHOLD_PENCE;
-  if (amountOfPersonalAllowanceLeft > 0) {
-    // higher rate threshold but with personal allowance remaining
-    const amountAtLowerRate =
-      HIGHER_DIVIDEND_TAX_THRESHOLD_PENCE - DIVIDEND_TAX_FREE_ALLOWANCE_PENCE;
-    const amountAthigherRate = taxableDividends - amountAtLowerRate;
-    const lowerTaxToPay =
-      amountAtLowerRate * (BASIC_DIVIDEND_TAX_RATE_PERCENTAGE / 100);
-    const higherTaxToPay =
-      amountAthigherRate * (HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE / 100);
-    return {
-      basic: lowerTaxToPay,
-      higher: higherTaxToPay,
-      additional: 0,
-      total: lowerTaxToPay + higherTaxToPay,
-    };
-  }
+  // Income thresholds (total income basis)
+  const higherRateThreshold =
+    TAX_FREE_PERSONAL_ALLOWANCE_PENCE + HIGHER_DIVIDEND_TAX_THRESHOLD_PENCE; // £50,270
 
-  if (taxableDividends <= ADDITIONAL_DIVIDEND_TAX_THRESHOLD_PENCE) {
-    // higher rate threshold but with no personal allowance remaining
-    // console.log("hit");
-    // const taxFreeDividendsLeft =
-    //   amountOfPersonalAllowanceLeft + DIVIDEND_TAX_FREE_ALLOWANCE_PENCE;
-    // console.log("taxFreeDividendsLeft", taxFreeDividendsLeft / 100);
-    // // const taxableDividends =
-    // //   dividendDrawdown - taxFreeDividendsLeft < 0
-    // //     ? 0
-    // //     : dividendDrawdown - taxFreeDividendsLeft;
-    // return {
-    //   basic: 0,
-    //   higher: 0,
-    //   additional: 0,
-    //   total: 0,
-    // };
-    const amountAtLowerRate =
-      HIGHER_DIVIDEND_TAX_THRESHOLD_PENCE - DIVIDEND_TAX_FREE_ALLOWANCE_PENCE;
+  // Split taxable dividends across rate bands using total income position
+  const inAdditionalRate = Math.min(
+    taxableDividends,
+    Math.max(0, totalIncome - ADDITIONAL_DIVIDEND_TAX_THRESHOLD_PENCE)
+  );
+  const inHigherRateAndAbove = Math.max(0, totalIncome - higherRateThreshold);
+  const inHigherRate = Math.min(
+    taxableDividends - inAdditionalRate,
+    Math.max(0, inHigherRateAndAbove - inAdditionalRate)
+  );
+  const inBasicRate = taxableDividends - inAdditionalRate - inHigherRate;
 
-    const amountAthigherRate = taxableDividends - amountAtLowerRate;
-    const lowerTaxToPay =
-      amountAtLowerRate * (BASIC_DIVIDEND_TAX_RATE_PERCENTAGE / 100);
-    const higherTaxToPay =
-      amountAthigherRate * (HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE / 100);
-    // console.log("amountOfPersonalAllowanceLeft", amountOfPersonalAllowanceLeft);
-    // console.log(
-    //   `youll pay ${BASIC_DIVIDEND_TAX_RATE_PERCENTAGE}% tax on the next`,
-    //   amountAtLowerRate / 100,
-    //   `plus additional tax of ${HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE}% on the next`,
-    //   amountAthigherRate / 100
-    // );
-    // The band reduces
-    return {
-      basic: lowerTaxToPay,
-      higher: higherTaxToPay,
-      additional: 0,
-      total: lowerTaxToPay + higherTaxToPay,
-    };
-  }
-
-  // if (amountOfPersonalAllowanceLeft > 0) {
-  //   // earnings over £100k but still has personal allowance remaining
-  //   // start paying dividend taxes earlier
-  //   // const newTaxFreePersonalAllowancePence =
-  //   //   TAX_FREE_PERSONAL_ALLOWANCE_PENCE -
-  //   //   amountOverFullPersonalAllowanceThreshold;
-  //   // console.log(amountOverFullPersonalAllowanceThreshold);
-  //   // console.log(taxFreeDividendsLeft);
-  //   const amountAtLowerRate =
-  //     HIGHER_DIVIDEND_TAX_THRESHOLD_PENCE - DIVIDEND_TAX_FREE_ALLOWANCE_PENCE;
-  //   const amountAthigherRate = taxableDividends - amountAtLowerRate;
-  //   const lowerTaxToPay =
-  //     amountAtLowerRate * (BASIC_DIVIDEND_TAX_RATE_PERCENTAGE / 100);
-  //   const higherTaxToPay =
-  //     amountAthigherRate * (HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE / 100);
-  //   return {
-  //     basic: lowerTaxToPay,
-  //     higher: higherTaxToPay,
-  //     additional: 0,
-  //     total: lowerTaxToPay + higherTaxToPay,
-  //   };
-  // }
+  const basicTax = inBasicRate * (BASIC_DIVIDEND_TAX_RATE_PERCENTAGE / 100);
+  const higherTax = inHigherRate * (HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE / 100);
+  const additionalTax = inAdditionalRate * (ADDITIONAL_DIVIDEND_TAX_RATE_PERCENTAGE / 100);
 
   return {
-    basic: 0,
-    higher: 0,
-    additional: 0,
-    total: 0,
+    basic: basicTax,
+    higher: higherTax,
+    additional: additionalTax,
+    total: basicTax + higherTax + additionalTax,
   };
-
-  // personal allowance used up
 };

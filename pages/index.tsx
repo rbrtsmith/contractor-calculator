@@ -55,6 +55,7 @@ const Home = () => {
     BASIC_DIVIDEND_TAX_RATE_PERCENTAGE,
     HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE,
     ADDITIONAL_DIVIDEND_TAX_RATE_PERCENTAGE,
+    DIVIDEND_TAX_FREE_ALLOWANCE_PENCE,
   } = taxes;
 
   const {
@@ -289,7 +290,7 @@ const Home = () => {
                 Tax due on dividends
                 {Number(numberOfDirectors) > 1 ? " per director:" : ":"}
               </strong>{" "}
-              <em>(First £2,000.00 is tax free)</em>
+              <em>(First {currencyFormat(DIVIDEND_TAX_FREE_ALLOWANCE_PENCE)} is tax free)</em>
               <ul className="list-disc list-inside">
                 <li>
                   Basic ({BASIC_DIVIDEND_TAX_RATE_PERCENTAGE}%):{" "}

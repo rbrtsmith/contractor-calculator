@@ -21,6 +21,8 @@ const getComplexCorporationTaxDue = (profit: number, taxes: Taxes) => {
     return profit * (taxes.CORPORATION_TAX_PERCENTAGE / 100);
   }
 
+  if (profit <= 50000) return profit * 0.19;
+
   // step 1
   const profitPlus25Percent = profit * PROFIT_MULTIPLIER;
 
