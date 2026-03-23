@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useForm, useCalculate } from "../hooks";
-import { TextInput, SelectInput, Button } from "../components";
+import { TextInput, SelectInput, Button, InsideIR35Form } from "../components";
 import { currencyFormat, convertToPounds, convertToPence } from "../utils";
 
 import { TAXES } from "../constants";
@@ -15,6 +15,7 @@ const taxYears = [
 ];
 
 const Home = () => {
+  const [activeTab, setActiveTab] = useState<"outside" | "inside">("outside");
   const [directorLoanPlans, setDirectorLoanPlans] = useState<string[]>(["none"]);
 
   const [values, handleChange] = useForm({
@@ -99,8 +100,24 @@ const Home = () => {
         <h1 className="leading-none text-[72px] bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-500 font-extrabold mb-6">
           Contractor income calculator
         </h1>
-        <p className="mb-0">Outside IR35 only for now…</p>
-        <div className="w-full pt-10 max-w-xl text-left mx-auto">
+        <div className="w-full max-w-xl mx-auto mt-8">
+          <div className="tab-bar">
+            <button
+              onClick={() => setActiveTab("outside")}
+              className={activeTab === "outside" ? "tab-button tab-button-active" : "tab-button"}
+            >
+              Outside IR35
+            </button>
+            <button
+              onClick={() => setActiveTab("inside")}
+              className={activeTab === "inside" ? "tab-button tab-button-active" : "tab-button"}
+            >
+              Inside IR35
+            </button>
+          </div>
+        </div>
+
+        <div style={{ display: activeTab !== "outside" ? "none" : undefined }} className="w-full pt-6 max-w-xl text-left mx-auto">
           <SelectInput
             label="Tax year"
             name="taxYear"
@@ -388,6 +405,8 @@ const Home = () => {
             </li>
           </ul>
         </div>
+
+        <InsideIR35Form hidden={activeTab !== "inside"} />
       </div>
     </main>
   );
