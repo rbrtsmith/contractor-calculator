@@ -2,9 +2,9 @@
   "name": "new-project",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "build:static": "next build && next export",
+    "dev": "css:dev & next dev",
+    "build": "npm run css:build && next build",
+    "build:static": "npm run css:build && next build && next export",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",

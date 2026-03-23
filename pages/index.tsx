@@ -97,11 +97,12 @@ const Home = () => {
   return (
     <main>
       <div className="flex flex-col justify-center text-center pt-10 px-4">
-        <div className="text-right w-full max-w-xl mx-auto mb-4">
+        <div className="mb-8">
           <a
             href="https://www.buymeacoffee.com/rbrtsmith"
             target="_blank"
             rel="noreferrer"
+            className="inline-block"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img

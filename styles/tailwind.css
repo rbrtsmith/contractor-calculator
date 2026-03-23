@@ -48,3 +48,27 @@ button[disabled]:hover,
 button[disabled]:focus {
   background-color: grey;
 }
+
+.tab-bar {
+  display: flex;
+  background-color: #f1f5f9;
+  border-radius: 0.5rem;
+  padding: 4px;
+  gap: 4px;
+}
+
+.tab-button {
+  flex: 1;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: #64748b;
+}
+
+.tab-button-active {
+  background-color: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
