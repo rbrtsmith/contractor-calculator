@@ -5,7 +5,6 @@ export default function Document() {
     <Html>
       <Head>
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <link rel="alternate icon" href="/favicon.ico" />
       </Head>
       <body>
         <Main />
