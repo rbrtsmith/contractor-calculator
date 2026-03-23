@@ -4,7 +4,14 @@ import { currencyFormat, convertToPounds } from "../utils";
 
 import { TAXES } from "../constants";
 
-const taxYears = ["2021/22", "2022/23", "2023/24", "2024/25"];
+const taxYears = [
+  "2021/22",
+  "2022/23",
+  "2023/24",
+  "2024/25",
+  "2025/26",
+  "2026/27",
+];
 
 const Home = () => {
   const [values, handleChange] = useForm({
@@ -12,7 +19,7 @@ const Home = () => {
     dailyRate: "600.00",
     numberOfDirectors: "1",
     salaryDrawdown: `${convertToPounds(
-      TAXES[taxYears[0]].MAX_TAX_EFFICIENT_SALARY_PENCE
+      TAXES[taxYears[0]].MAX_TAX_EFFICIENT_SALARY_PENCE,
     )}.00`,
     generalExpenses: "1200.00",
     pensionContributions: "0.00",
@@ -30,8 +37,6 @@ const Home = () => {
     dividendDrawdown,
     taxYear,
   } = values;
-
-  console.log("taxYear", taxYear);
 
   const taxes = TAXES[taxYear];
 
@@ -136,7 +141,7 @@ const Home = () => {
             label={`Annual salary drawdown ${
               Number(numberOfDirectors) > 1 ? "per director" : ""
             } (${currencyFormat(
-              MAX_TAX_EFFICIENT_SALARY_PENCE
+              MAX_TAX_EFFICIENT_SALARY_PENCE,
             )} is the most tax efficient)`}
             prepend="£"
             append={
@@ -150,7 +155,7 @@ const Home = () => {
                     currentTarget: {
                       name: "salaryDrawdown",
                       value: convertToPounds(
-                        MAX_TAX_EFFICIENT_SALARY_PENCE
+                        MAX_TAX_EFFICIENT_SALARY_PENCE,
                       ).toFixed(2),
                     },
                   } as any as React.FormEvent<HTMLInputElement>;
@@ -172,7 +177,7 @@ const Home = () => {
             label={`Annual dividend drawdown ${
               Number(numberOfDirectors) > 1 ? "per director" : ""
             } (Maximum available is ${currencyFormat(
-              maximumAllowableDividendDrawdown
+              maximumAllowableDividendDrawdown,
             )})`}
             prepend="£"
             append={
@@ -186,7 +191,7 @@ const Home = () => {
                     currentTarget: {
                       name: "dividendDrawdown",
                       value: convertToPounds(
-                        maximumAllowableDividendDrawdown
+                        maximumAllowableDividendDrawdown,
                       ).toFixed(2),
                     },
                   } as any as React.FormEvent<HTMLInputElement>;
@@ -257,13 +262,6 @@ const Home = () => {
                 </li>
               </ul>
             </li>
-            {/* <li className="mb-2">
-              <strong>
-                Tax to pay on salary
-                {Number(numberOfDirectors) > 1 ? " per director:" : ":"}
-              </strong>{" "}
-              £0.00
-            </li> */}
             <li className="mb-2">
               {Number(numberOfDirectors) > 1 ? (
                 <>
