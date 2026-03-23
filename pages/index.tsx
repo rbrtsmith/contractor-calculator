@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Image from "next/image";
 import { useForm, useCalculate } from "../hooks";
 import { TextInput, SelectInput, Button, InsideIR35Form } from "../components";
 import { currencyFormat, convertToPounds, convertToPence } from "../utils";
@@ -97,6 +98,20 @@ const Home = () => {
   return (
     <main>
       <div className="flex flex-col justify-center text-center pt-10 px-4">
+        <div className="text-right w-full max-w-xl mx-auto mb-4">
+          <a
+            href="https://www.buymeacoffee.com/rbrtsmith"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <Image
+              src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png"
+              alt="Buy Me A Coffee"
+              width={181}
+              height={50}
+            />
+          </a>
+        </div>
         <h1 className="leading-none text-[72px] bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-500 font-extrabold mb-6">
           Contractor income calculator
         </h1>
