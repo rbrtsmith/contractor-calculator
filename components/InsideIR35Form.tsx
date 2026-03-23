@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { useForm } from "../hooks";
 import { TextInput } from "./TextInput";
 import { SelectInput } from "./SelectInput";
-import { currencyFormat, convertToPence, convertToPounds } from "../utils";
+import { currencyFormat, convertToPence } from "../utils";
 import { TAXES } from "../constants";
 
 const taxYears = [
@@ -16,6 +17,13 @@ const taxYears = [
 const INCOME_TAX_BASIC_RATE = 0.2;
 const INCOME_TAX_HIGHER_RATE = 0.4;
 const INCOME_TAX_ADDITIONAL_RATE = 0.45;
+const STUDENT_LOAN_RATE = 0.09;
+
+const loanPlanOptions = [
+  { label: "None", value: "none" },
+  { label: "Plan 1", value: "plan1" },
+  { label: "Plan 2", value: "plan2" },
+];
 
 const computeInsideIR35 = ({
   numberOfDaysWorked,
@@ -49,20 +57,14 @@ const computeInsideIR35 = ({
   const netAfterDeductions = grossContractValue - expenses - pensionContributions;
 
   // Solve for gross salary: netAfterDeductions = grossSalary + employerNI
-  // If grossSalary > secondaryThreshold:
-  //   netAfterDeductions = grossSalary * (1 + employerNIRate) - employerNIRate * secondaryThreshold
-  //   grossSalary = (netAfterDeductions + employerNIRate * secondaryThreshold) / (1 + employerNIRate)
-  let grossSalary: number;
   const tentativeGrossSalary =
     (netAfterDeductions + employerNIRate * EMPLOYER_NI_SECONDARY_THRESHOLD_PENCE) /
     (1 + employerNIRate);
 
-  if (tentativeGrossSalary > EMPLOYER_NI_SECONDARY_THRESHOLD_PENCE) {
-    grossSalary = tentativeGrossSalary;
-  } else {
-    // Below secondary threshold — no employer NI
-    grossSalary = netAfterDeductions;
-  }
+  const grossSalary =
+    tentativeGrossSalary > EMPLOYER_NI_SECONDARY_THRESHOLD_PENCE
+      ? tentativeGrossSalary
+      : netAfterDeductions;
 
   const employerNI = Math.max(0, netAfterDeductions - grossSalary);
 
@@ -75,12 +77,9 @@ const computeInsideIR35 = ({
 
   // Income tax
   const higherRateThreshold =
-    TAX_FREE_PERSONAL_ALLOWANCE_PENCE + HIGHER_DIVIDEND_TAX_THRESHOLD_PENCE; // £50,270
+    TAX_FREE_PERSONAL_ALLOWANCE_PENCE + HIGHER_DIVIDEND_TAX_THRESHOLD_PENCE;
   const taxableIncome = Math.max(0, grossSalary - personalAllowance);
-  const inAdditionalRateBand = Math.max(
-    0,
-    grossSalary - ADDITIONAL_DIVIDEND_TAX_THRESHOLD_PENCE
-  );
+  const inAdditionalRateBand = Math.max(0, grossSalary - ADDITIONAL_DIVIDEND_TAX_THRESHOLD_PENCE);
   const inHigherRateBand = Math.max(
     0,
     Math.min(grossSalary, ADDITIONAL_DIVIDEND_TAX_THRESHOLD_PENCE) - higherRateThreshold
@@ -102,8 +101,6 @@ const computeInsideIR35 = ({
   const employeeNI =
     Math.max(0, employeeNIBasic) * employeeNIBasicRate + Math.max(0, employeeNIHigher) * 0.02;
 
-  const netPay = grossSalary - incomeTax - employeeNI;
-
   return {
     grossContractValue,
     employerNI,
@@ -115,11 +112,13 @@ const computeInsideIR35 = ({
       additional: inAdditionalRateBand * INCOME_TAX_ADDITIONAL_RATE,
     },
     employeeNI,
-    netPay,
+    netPay: grossSalary - incomeTax - employeeNI,
   };
 };
 
 export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
+  const [studentLoanPlan, setStudentLoanPlan] = useState("none");
+
   const [values, handleChange] = useForm({
     numberOfDaysWorked: "230",
     dailyRate: "600.00",
@@ -131,7 +130,6 @@ export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
   const { numberOfDaysWorked, dailyRate, expenses, pensionContributions, taxYear } = values;
 
   const taxes = TAXES[taxYear];
-
   const result = computeInsideIR35({
     numberOfDaysWorked: Number(numberOfDaysWorked),
     dailyRate: convertToPence(dailyRate),
@@ -139,6 +137,18 @@ export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
     pensionContributions: convertToPence(pensionContributions),
     taxes,
   });
+
+  const studentLoanRepayment = (() => {
+    if (studentLoanPlan === "none") return 0;
+    const threshold =
+      studentLoanPlan === "plan1"
+        ? taxes.STUDENT_LOAN_PLAN1_THRESHOLD_PENCE
+        : taxes.STUDENT_LOAN_PLAN2_THRESHOLD_PENCE;
+    const above = result.grossSalary - threshold;
+    return above > 0 ? above * STUDENT_LOAN_RATE : 0;
+  })();
+
+  const netPayAfterStudentLoan = result.netPay - studentLoanRepayment;
 
   return (
     <div style={{ display: hidden ? "none" : undefined }}>
@@ -149,6 +159,13 @@ export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
           value={taxYear}
           onChange={handleChange}
           options={taxYears.map((year) => ({ label: year, value: year }))}
+        />
+        <SelectInput
+          label="Student loan plan"
+          name="studentLoanPlan"
+          value={studentLoanPlan}
+          onChange={(e) => setStudentLoanPlan(e.currentTarget.value)}
+          options={loanPlanOptions}
         />
         <TextInput
           label="Number of days worked annually"
@@ -180,7 +197,7 @@ export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
           onChange={handleChange}
         />
         <TextInput
-          label="Annual employer pension contributions"
+          label="Annual pension contributions"
           prepend="£"
           step="0.01"
           type="number"
@@ -195,8 +212,10 @@ export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
             {currencyFormat(result.grossContractValue)}
           </li>
           <li className="mb-2">
-            <strong>Employer NI ({taxes.EMPLOYER_NI_RATE_PERCENTAGE}% above{" "}
-            {currencyFormat(taxes.EMPLOYER_NI_SECONDARY_THRESHOLD_PENCE)}):</strong>{" "}
+            <strong>
+              Employer NI ({taxes.EMPLOYER_NI_RATE_PERCENTAGE}% above{" "}
+              {currencyFormat(taxes.EMPLOYER_NI_SECONDARY_THRESHOLD_PENCE)}):
+            </strong>{" "}
             {currencyFormat(result.employerNI)}
           </li>
           <li className="mb-2">
@@ -218,10 +237,29 @@ export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
             </strong>{" "}
             {currencyFormat(result.employeeNI)}
           </li>
+          {studentLoanRepayment > 0 && (
+            <li className="mb-2">
+              <strong>
+                Student loan repayment ({studentLoanPlan === "plan1" ? "Plan 1" : "Plan 2"}):
+              </strong>{" "}
+              {currencyFormat(studentLoanRepayment)}
+            </li>
+          )}
           <li className="mb-2">
-            <strong>Net take-home pay:</strong> {currencyFormat(result.netPay)}
+            <strong>Net take-home pay:</strong> {currencyFormat(netPayAfterStudentLoan)}
           </li>
         </ul>
+        <p className="mb-2">
+          Want to compare against a permanent salary?{" "}
+          <a
+            href="https://www.thesalarycalculator.co.uk/"
+            target="_blank"
+            rel="noreferrer"
+            style={{ color: "#3b82f6" }}
+          >
+            The Salary Calculator
+          </a>
+        </p>
       </div>
     </div>
   );

@@ -404,6 +404,17 @@ const Home = () => {
               )}
             </li>
           </ul>
+          <p className="mb-2">
+            Want to compare against a permanent salary?{" "}
+            <a
+              href="https://www.thesalarycalculator.co.uk/"
+              target="_blank"
+              rel="noreferrer"
+              style={{ color: "#3b82f6" }}
+            >
+              The Salary Calculator
+            </a>
+          </p>
         </div>
 
         <InsideIR35Form hidden={activeTab !== "inside"} />
