@@ -1,5 +1,4 @@
 import { useState } from "react";
-import Image from "next/image";
 import { useForm, useCalculate } from "../hooks";
 import { TextInput, SelectInput, Button, InsideIR35Form } from "../components";
 import { currencyFormat, convertToPounds, convertToPence } from "../utils";
@@ -104,11 +103,11 @@ const Home = () => {
             target="_blank"
             rel="noreferrer"
           >
-            <Image
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png"
               alt="Buy Me A Coffee"
-              width={181}
-              height={50}
+              style={{ height: "50px", width: "181px" }}
             />
           </a>
         </div>
