@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { useForm, useCalculate } from "../hooks";
 import { TextInput, SelectInput, Button } from "../components";
-import { currencyFormat, convertToPounds } from "../utils";
+import { currencyFormat, convertToPounds, convertToPence } from "../utils";
 
 import { TAXES } from "../constants";
 
@@ -14,6 +15,8 @@ const taxYears = [
 ];
 
 const Home = () => {
+  const [directorLoanPlans, setDirectorLoanPlans] = useState<string[]>(["none"]);
+
   const [values, handleChange] = useForm({
     numberOfDaysWorked: "230",
     dailyRate: "600.00",
@@ -37,6 +40,12 @@ const Home = () => {
     dividendDrawdown,
     taxYear,
   } = values;
+
+  const numDirs = Number(numberOfDirectors);
+  const syncedLoanPlans = Array.from(
+    { length: numDirs },
+    (_, i) => directorLoanPlans[i] ?? "none"
+  );
 
   const taxes = TAXES[taxYear];
 
@@ -67,6 +76,22 @@ const Home = () => {
     taxes,
   });
 
+  const incomePerDirectorPence =
+    convertToPence(salaryDrawdown) + convertToPence(dividendDrawdown);
+
+  const getStudentLoanRepayment = (plan: string): number => {
+    if (plan === "none") return 0;
+    const threshold =
+      plan === "plan1"
+        ? taxes.STUDENT_LOAN_PLAN1_THRESHOLD_PENCE
+        : taxes.STUDENT_LOAN_PLAN2_THRESHOLD_PENCE;
+    const above = incomePerDirectorPence - threshold;
+    return above > 0 ? above * 0.09 : 0;
+  };
+
+  const studentLoanRepayments = syncedLoanPlans.map(getStudentLoanRepayment);
+  const anyStudentLoan = studentLoanRepayments.some((r) => r > 0);
+
   return (
     <main>
       <div className="flex flex-col justify-center text-center pt-10 px-4">
@@ -95,6 +120,28 @@ const Home = () => {
             value={numberOfDirectors}
             onChange={handleChange}
           />
+          {syncedLoanPlans.map((plan, i) => (
+            <SelectInput
+              key={i}
+              label={
+                numDirs > 1
+                  ? `Director ${i + 1} student loan plan`
+                  : "Student loan plan"
+              }
+              name={`directorLoanPlan_${i}`}
+              value={plan}
+              onChange={(e) => {
+                const updated = [...syncedLoanPlans];
+                updated[i] = e.currentTarget.value;
+                setDirectorLoanPlans(updated);
+              }}
+              options={[
+                { label: "None", value: "none" },
+                { label: "Plan 1", value: "plan1" },
+                { label: "Plan 2", value: "plan2" },
+              ]}
+            />
+          ))}
           <TextInput
             label="Number of days worked annually"
             maxLength={3}
@@ -262,17 +309,79 @@ const Home = () => {
                 </li>
               </ul>
             </li>
+            {anyStudentLoan && (
+              <li className="mb-2">
+                <strong>
+                  Student loan repayment
+                  {numDirs > 1 ? "s" : ""}:
+                </strong>
+                {numDirs === 1 ? (
+                  <>
+                    {" "}
+                    (
+                    {syncedLoanPlans[0] === "plan1" ? "Plan 1" : "Plan 2"}
+                    ): {currencyFormat(studentLoanRepayments[0])}
+                  </>
+                ) : (
+                  <ul className="list-disc list-inside">
+                    {syncedLoanPlans.map((plan, i) =>
+                      plan !== "none" ? (
+                        <li key={i}>
+                          Director {i + 1} (
+                          {plan === "plan1" ? "Plan 1" : "Plan 2"}
+                          ): {currencyFormat(studentLoanRepayments[i])}
+                        </li>
+                      ) : null
+                    )}
+                  </ul>
+                )}
+              </li>
+            )}
             <li className="mb-2">
-              {Number(numberOfDirectors) > 1 ? (
+              {numDirs > 1 ? (
                 <>
-                  <strong>Net pay per director:</strong>{" "}
-                  {currencyFormat(totalAfterTaxPay)} (
-                  {currencyFormat(totalAfterTaxPay * Number(numberOfDirectors))}{" "}
-                  when combined)
+                  <strong>Net pay per director:</strong>
+                  {studentLoanRepayments.every(
+                    (r) => r === studentLoanRepayments[0]
+                  ) ? (
+                    <>
+                      {" "}
+                      {currencyFormat(
+                        totalAfterTaxPay - studentLoanRepayments[0]
+                      )}{" "}
+                      (
+                      {currencyFormat(
+                        (totalAfterTaxPay - studentLoanRepayments[0]) *
+                          numDirs
+                      )}{" "}
+                      when combined)
+                    </>
+                  ) : (
+                    <ul className="list-disc list-inside">
+                      {syncedLoanPlans.map((_, i) => (
+                        <li key={i}>
+                          Director {i + 1}:{" "}
+                          {currencyFormat(
+                            totalAfterTaxPay - studentLoanRepayments[i]
+                          )}
+                        </li>
+                      ))}
+                      <li>
+                        Combined:{" "}
+                        {currencyFormat(
+                          studentLoanRepayments.reduce(
+                            (sum, r) => sum + (totalAfterTaxPay - r),
+                            0
+                          )
+                        )}
+                      </li>
+                    </ul>
+                  )}
                 </>
               ) : (
                 <>
-                  <strong>Net pay:</strong> {currencyFormat(totalAfterTaxPay)}
+                  <strong>Net pay:</strong>{" "}
+                  {currencyFormat(totalAfterTaxPay - studentLoanRepayments[0])}
                 </>
               )}
             </li>
