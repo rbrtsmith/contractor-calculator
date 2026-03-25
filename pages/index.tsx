@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useForm, useCalculate } from "../hooks";
-import { TextInput, SelectInput, Button, InsideIR35Form } from "../components";
+import { TextInput, SelectInput, Button, InsideIR35Form, ExpandableContent } from "../components";
 import { currencyFormat, convertToPounds, convertToPence } from "../utils";
 
 import { TAXES } from "../constants";
@@ -16,7 +16,10 @@ const taxYears = [
 
 const Home = () => {
   const [activeTab, setActiveTab] = useState<"outside" | "inside">("outside");
-  const [directorLoanPlans, setDirectorLoanPlans] = useState<string[]>(["none"]);
+  const [directorLoanPlans, setDirectorLoanPlans] = useState<string[]>([
+    "none",
+  ]);
+  const [directorEVP11d, setDirectorEVP11d] = useState<string[]>(["0"]);
 
   const [values, handleChange] = useForm({
     numberOfDaysWorked: "230",
@@ -45,7 +48,11 @@ const Home = () => {
   const numDirs = Number(numberOfDirectors);
   const syncedLoanPlans = Array.from(
     { length: numDirs },
-    (_, i) => directorLoanPlans[i] ?? "none"
+    (_, i) => directorLoanPlans[i] ?? "none",
+  );
+  const syncedEVP11d = Array.from(
+    { length: numDirs },
+    (_, i) => directorEVP11d[i] ?? "0",
   );
 
   const taxes = TAXES[taxYear];
@@ -57,6 +64,10 @@ const Home = () => {
     HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE,
     ADDITIONAL_DIVIDEND_TAX_RATE_PERCENTAGE,
     DIVIDEND_TAX_FREE_ALLOWANCE_PENCE,
+    HIGHER_DIVIDEND_TAX_THRESHOLD_PENCE,
+    ADDITIONAL_DIVIDEND_TAX_THRESHOLD_PENCE,
+    EMPLOYER_NI_RATE_PERCENTAGE,
+    EV_BIK_RATE_PERCENTAGE,
   } = taxes;
 
   const {
@@ -94,6 +105,32 @@ const Home = () => {
   const studentLoanRepayments = syncedLoanPlans.map(getStudentLoanRepayment);
   const anyStudentLoan = studentLoanRepayments.some((r) => r > 0);
 
+  const totalIncomePence =
+    convertToPence(salaryDrawdown) + convertToPence(dividendDrawdown);
+  const higherRateThreshold =
+    TAX_FREE_PERSONAL_ALLOWANCE_PENCE + HIGHER_DIVIDEND_TAX_THRESHOLD_PENCE;
+  const bikTaxRate =
+    totalIncomePence > ADDITIONAL_DIVIDEND_TAX_THRESHOLD_PENCE
+      ? 0.45
+      : totalIncomePence > higherRateThreshold
+        ? 0.4
+        : totalIncomePence > TAX_FREE_PERSONAL_ALLOWANCE_PENCE
+          ? 0.2
+          : 0;
+
+  const directorBiK = syncedEVP11d.map((p11d) => {
+    const p11dPence = convertToPence(p11d);
+    const bikValue = p11dPence * (EV_BIK_RATE_PERCENTAGE / 100);
+    return {
+      p11dPence,
+      bikValue,
+      incomeTaxOnBik: bikValue * bikTaxRate,
+      class1aNI: bikValue * (EMPLOYER_NI_RATE_PERCENTAGE / 100),
+    };
+  });
+  const anyBiK = directorBiK.some((b) => b.p11dPence > 0);
+  const totalClass1aNI = directorBiK.reduce((sum, b) => sum + b.class1aNI, 0);
+
   return (
     <main>
       <div className="flex flex-col justify-center text-center pt-10 px-4">
@@ -119,20 +156,31 @@ const Home = () => {
           <div className="tab-bar">
             <button
               onClick={() => setActiveTab("outside")}
-              className={activeTab === "outside" ? "tab-button tab-button-active" : "tab-button"}
+              className={
+                activeTab === "outside"
+                  ? "tab-button tab-button-active"
+                  : "tab-button"
+              }
             >
               Outside IR35
             </button>
             <button
               onClick={() => setActiveTab("inside")}
-              className={activeTab === "inside" ? "tab-button tab-button-active" : "tab-button"}
+              className={
+                activeTab === "inside"
+                  ? "tab-button tab-button-active"
+                  : "tab-button"
+              }
             >
               Inside IR35
             </button>
           </div>
         </div>
 
-        <div style={{ display: activeTab !== "outside" ? "none" : undefined }} className="w-full pt-6 max-w-xl text-left mx-auto">
+        <div
+          style={{ display: activeTab !== "outside" ? "none" : undefined }}
+          className="w-full pt-6 max-w-xl text-left mx-auto"
+        >
           <SelectInput
             label="Tax year"
             name="taxYear"
@@ -153,28 +201,30 @@ const Home = () => {
             value={numberOfDirectors}
             onChange={handleChange}
           />
-          {syncedLoanPlans.map((plan, i) => (
-            <SelectInput
-              key={i}
-              label={
-                numDirs > 1
-                  ? `Director ${i + 1} student loan plan`
-                  : "Student loan plan"
-              }
-              name={`directorLoanPlan_${i}`}
-              value={plan}
-              onChange={(e) => {
-                const updated = [...syncedLoanPlans];
-                updated[i] = e.currentTarget.value;
-                setDirectorLoanPlans(updated);
-              }}
-              options={[
-                { label: "None", value: "none" },
-                { label: "Plan 1", value: "plan1" },
-                { label: "Plan 2", value: "plan2" },
-              ]}
-            />
-          ))}
+          <ExpandableContent title="Student loan">
+            {syncedLoanPlans.map((plan, i) => (
+              <SelectInput
+                key={i}
+                label={
+                  numDirs > 1
+                    ? `Director ${i + 1} student loan plan`
+                    : "Student loan plan"
+                }
+                name={`directorLoanPlan_${i}`}
+                value={plan}
+                onChange={(e) => {
+                  const updated = [...syncedLoanPlans];
+                  updated[i] = e.currentTarget.value;
+                  setDirectorLoanPlans(updated);
+                }}
+                options={[
+                  { label: "None", value: "none" },
+                  { label: "Plan 1", value: "plan1" },
+                  { label: "Plan 2", value: "plan2" },
+                ]}
+              />
+            ))}
+          </ExpandableContent>
           <TextInput
             label="Number of days worked annually"
             maxLength={3}
@@ -195,28 +245,54 @@ const Home = () => {
             value={dailyRate}
             onChange={handleChange}
           />
-          <TextInput
-            label="Annual expenses"
-            prepend="£"
-            step="0.01"
-            type="number"
-            min={0}
-            maxLength={10}
-            name="generalExpenses"
-            value={generalExpenses}
-            onChange={handleChange}
-          />
-          <TextInput
-            label="Annual pension contributions"
-            prepend="£"
-            step="0.01"
-            type="number"
-            min={0}
-            maxLength={10}
-            name="pensionContributions"
-            value={pensionContributions}
-            onChange={handleChange}
-          />
+          <ExpandableContent title="Expenses">
+            <TextInput
+              label="Annual expenses"
+              prepend="£"
+              step="0.01"
+              type="number"
+              min={0}
+              maxLength={10}
+              name="generalExpenses"
+              value={generalExpenses}
+              onChange={handleChange}
+            />
+            <TextInput
+              label="Annual pension contributions"
+              prepend="£"
+              step="0.01"
+              type="number"
+              min={0}
+              maxLength={10}
+              name="pensionContributions"
+              value={pensionContributions}
+              onChange={handleChange}
+            />
+          </ExpandableContent>
+          <ExpandableContent title="EV company car">
+          {syncedEVP11d.map((p11d, i) => (
+            <TextInput
+              key={i}
+              label={
+                numDirs > 1
+                  ? `Director ${i + 1} EV P11D value (${EV_BIK_RATE_PERCENTAGE}% BiK rate for ${taxYear})`
+                  : `EV company car P11D value (${EV_BIK_RATE_PERCENTAGE}% BiK rate for ${taxYear})`
+              }
+              prepend="£"
+              step="0.01"
+              type="number"
+              min={0}
+              maxLength={10}
+              name={`evP11d_${i}`}
+              value={p11d}
+              onChange={(e) => {
+                const updated = [...syncedEVP11d];
+                updated[i] = e.currentTarget.value;
+                setDirectorEVP11d(updated);
+              }}
+            />
+          ))}
+          </ExpandableContent>
           <TextInput
             label={`Annual salary drawdown ${
               Number(numberOfDirectors) > 1 ? "per director" : ""
@@ -300,7 +376,7 @@ const Home = () => {
             </li>
             <li className="mb-2">
               <strong>Retained profits:</strong>{" "}
-              {currencyFormat(retainedProfits)}
+              {currencyFormat(retainedProfits - totalClass1aNI)}
             </li>
             <li className="mb-2">
               <strong>
@@ -322,7 +398,10 @@ const Home = () => {
                 Tax due on dividends
                 {Number(numberOfDirectors) > 1 ? " per director:" : ":"}
               </strong>{" "}
-              <em>(First {currencyFormat(DIVIDEND_TAX_FREE_ALLOWANCE_PENCE)} is tax free)</em>
+              <em>
+                (First {currencyFormat(DIVIDEND_TAX_FREE_ALLOWANCE_PENCE)} is
+                tax free)
+              </em>
               <ul className="list-disc list-inside">
                 <li>
                   Basic ({BASIC_DIVIDEND_TAX_RATE_PERCENTAGE}%):{" "}
@@ -342,6 +421,51 @@ const Home = () => {
                 </li>
               </ul>
             </li>
+            {anyBiK && (
+              <li className="mb-2">
+                <strong>
+                  EV company car BiK ({EV_BIK_RATE_PERCENTAGE}% of P11D):
+                </strong>
+                {numDirs === 1 ? (
+                  <ul className="list-disc list-inside">
+                    <li>
+                      BiK value: {currencyFormat(directorBiK[0].bikValue)}
+                    </li>
+                    <li>
+                      Income tax:{" "}
+                      {currencyFormat(directorBiK[0].incomeTaxOnBik)}
+                    </li>
+                    <li>
+                      Class 1A NI (company cost):{" "}
+                      {currencyFormat(directorBiK[0].class1aNI)}
+                    </li>
+                  </ul>
+                ) : (
+                  <ul className="list-disc list-inside">
+                    {directorBiK.map((bik, i) =>
+                      bik.p11dPence > 0 ? (
+                        <li key={i}>
+                          Director {i + 1}
+                          <ul
+                            className="list-inside pl-4"
+                            style={{ listStyleType: "circle" }}
+                          >
+                            <li>BiK value: {currencyFormat(bik.bikValue)}</li>
+                            <li>
+                              Income tax: {currencyFormat(bik.incomeTaxOnBik)}
+                            </li>
+                            <li>
+                              Class 1A NI (company cost):{" "}
+                              {currencyFormat(bik.class1aNI)}
+                            </li>
+                          </ul>
+                        </li>
+                      ) : null,
+                    )}
+                  </ul>
+                )}
+              </li>
+            )}
             {anyStudentLoan && (
               <li className="mb-2">
                 <strong>
@@ -351,8 +475,7 @@ const Home = () => {
                 {numDirs === 1 ? (
                   <>
                     {" "}
-                    (
-                    {syncedLoanPlans[0] === "plan1" ? "Plan 1" : "Plan 2"}
+                    ({syncedLoanPlans[0] === "plan1" ? "Plan 1" : "Plan 2"}
                     ): {currencyFormat(studentLoanRepayments[0])}
                   </>
                 ) : (
@@ -364,7 +487,7 @@ const Home = () => {
                           {plan === "plan1" ? "Plan 1" : "Plan 2"}
                           ): {currencyFormat(studentLoanRepayments[i])}
                         </li>
-                      ) : null
+                      ) : null,
                     )}
                   </ul>
                 )}
@@ -374,47 +497,40 @@ const Home = () => {
               {numDirs > 1 ? (
                 <>
                   <strong>Net pay per director:</strong>
-                  {studentLoanRepayments.every(
-                    (r) => r === studentLoanRepayments[0]
-                  ) ? (
-                    <>
-                      {" "}
-                      {currencyFormat(
-                        totalAfterTaxPay - studentLoanRepayments[0]
-                      )}{" "}
-                      (
-                      {currencyFormat(
-                        (totalAfterTaxPay - studentLoanRepayments[0]) *
-                          numDirs
-                      )}{" "}
-                      when combined)
-                    </>
-                  ) : (
-                    <ul className="list-disc list-inside">
-                      {syncedLoanPlans.map((_, i) => (
-                        <li key={i}>
-                          Director {i + 1}:{" "}
-                          {currencyFormat(
-                            totalAfterTaxPay - studentLoanRepayments[i]
-                          )}
-                        </li>
-                      ))}
-                      <li>
-                        Combined:{" "}
+                  <ul className="list-disc list-inside">
+                    {syncedLoanPlans.map((_, i) => (
+                      <li key={i}>
+                        Director {i + 1}:{" "}
                         {currencyFormat(
-                          studentLoanRepayments.reduce(
-                            (sum, r) => sum + (totalAfterTaxPay - r),
-                            0
-                          )
+                          totalAfterTaxPay -
+                            studentLoanRepayments[i] -
+                            directorBiK[i].incomeTaxOnBik,
                         )}
                       </li>
-                    </ul>
-                  )}
+                    ))}
+                    <li>
+                      Combined:{" "}
+                      {currencyFormat(
+                        syncedLoanPlans.reduce(
+                          (sum, _, i) =>
+                            sum +
+                            totalAfterTaxPay -
+                            studentLoanRepayments[i] -
+                            directorBiK[i].incomeTaxOnBik,
+                          0,
+                        ),
+                      )}
+                    </li>
+                  </ul>
                 </>
               ) : (
                 <>
                   <strong>Net pay:</strong>{" "}
-                  {currencyFormat(totalAfterTaxPay - studentLoanRepayments[0])}
+                  {currencyFormat(
+                    totalAfterTaxPay -
+                      studentLoanRepayments[0] -
+                      directorBiK[0].incomeTaxOnBik,
+                  )}
                 </>
               )}
             </li>

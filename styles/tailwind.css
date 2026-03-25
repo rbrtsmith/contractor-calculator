@@ -28,7 +28,7 @@ input:invalid {
   flex-direction: column;
   justify-content: center;
   font-weight: bold;
-  border-right: 1px solid rgb(148 163 184 / var(--tw-border-opacity));
+  border-right: 1px solid rgb(148 163 184);
 }
 
 .text-input-append {
@@ -40,7 +40,7 @@ input:invalid {
   flex-direction: column;
   justify-content: center;
   font-weight: bold;
-  border-left: 1px solid rgb(148 163 184 / var(--tw-border-opacity));
+  border-left: 1px solid rgb(148 163 184);
 }
 
 button[disabled],
