@@ -49,6 +49,9 @@ devDependencies:
   '@vitest/browser':
     specifier: ^4.1.1
     version: 4.1.1(vite@8.0.2)(vitest@4.1.1)
+  '@vitest/browser-playwright':
+    specifier: ^4.1.1
+    version: 4.1.1(playwright@1.58.2)(vite@8.0.2)(vitest@4.1.1)
   autoprefixer:
     specifier: ^10.4.0
     version: 10.4.27(postcss@8.5.8)
@@ -93,7 +96,7 @@ devDependencies:
     version: 4.5.4
   vitest:
     specifier: ^4.1.1
-    version: 4.1.1(@types/node@17.0.5)(jsdom@29.0.1)(vite@8.0.2)
+    version: 4.1.1(@types/node@17.0.5)(@vitest/browser-playwright@4.1.1)(jsdom@29.0.1)(vite@8.0.2)
 
 packages:
 
@@ -1560,6 +1563,24 @@ packages:
       vite: 8.0.2(@types/node@17.0.5)
     dev: true
 
+  /@vitest/browser-playwright@4.1.1(playwright@1.58.2)(vite@8.0.2)(vitest@4.1.1):
+    resolution: {integrity: sha512-dtVSBZZha2k/7P7EAXXrEAoxuIKl8Yv9f2Dk4GN/DGfmhf4DQvkvu+57okR2wq/gan1xppKjL/aBxK/kbYrbGw==}
+    peerDependencies:
+      playwright: '*'
+      vitest: 4.1.1
+    dependencies:
+      '@vitest/browser': 4.1.1(vite@8.0.2)(vitest@4.1.1)
+      '@vitest/mocker': 4.1.1(vite@8.0.2)
+      playwright: 1.58.2
+      tinyrainbow: 3.1.0
+      vitest: 4.1.1(@types/node@17.0.5)(@vitest/browser-playwright@4.1.1)(jsdom@29.0.1)(vite@8.0.2)
+    transitivePeerDependencies:
+      - bufferutil
+      - msw
+      - utf-8-validate
+      - vite
+    dev: true
+
   /@vitest/browser@4.1.1(vite@8.0.2)(vitest@4.1.1):
     resolution: {integrity: sha512-gjjrFC4+kPVK/fN9URDJWrssU5Gqh8Az8pKG/NSfQ2V+ky8b/y1BgBg0Ug13+hOGp5pzInonmGRPn7vOgSLgzA==}
     peerDependencies:
@@ -1572,7 +1593,7 @@ packages:
       pngjs: 7.0.0
       sirv: 3.0.2
       tinyrainbow: 3.1.0
-      vitest: 4.1.1(@types/node@17.0.5)(jsdom@29.0.1)(vite@8.0.2)
+      vitest: 4.1.1(@types/node@17.0.5)(@vitest/browser-playwright@4.1.1)(jsdom@29.0.1)(vite@8.0.2)
       ws: 8.20.0
     transitivePeerDependencies:
       - bufferutil
@@ -7347,7 +7368,7 @@ packages:
       fsevents: 2.3.3
     dev: true
 
-  /vitest@4.1.1(@types/node@17.0.5)(jsdom@29.0.1)(vite@8.0.2):
+  /vitest@4.1.1(@types/node@17.0.5)(@vitest/browser-playwright@4.1.1)(jsdom@29.0.1)(vite@8.0.2):
     resolution: {integrity: sha512-yF+o4POL41rpAzj5KVILUxm1GCjKnELvaqmU9TLLUbMfDzuN0UpUR9uaDs+mCtjPe+uYPksXDRLQGGPvj1cTmA==}
     engines: {node: ^20.0.0 || ^22.0.0 || >=24.0.0}
     hasBin: true
@@ -7383,6 +7404,7 @@ packages:
         optional: true
     dependencies:
       '@types/node': 17.0.5
+      '@vitest/browser-playwright': 4.1.1(playwright@1.58.2)(vite@8.0.2)(vitest@4.1.1)
       '@vitest/expect': 4.1.1
       '@vitest/mocker': 4.1.1(vite@8.0.2)
       '@vitest/pretty-format': 4.1.1
