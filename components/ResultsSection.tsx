@@ -150,6 +150,9 @@ export const ResultsSection = ({
 
   return (
     <div className="mt-8">
+      <h2 className="text-2xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-500">
+        Financial summary
+      </h2>
       {/* Company overview */}
       <div className="grid grid-cols-3 gap-3 mb-3">
         <StatCard label="Gross revenue" value={currencyFormat(totalRevenue)} />
