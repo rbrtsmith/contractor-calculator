@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 
 interface Props {
   title: string;
@@ -16,10 +17,14 @@ export const ExpandableContent = ({ title, children }: Props) => {
         className={`w-full flex justify-between items-center px-4 py-3 bg-slate-100 text-slate-900 font-bold text-left ${isOpen ? "rounded-t-lg" : "rounded-lg"}`}
       >
         <span>{title}</span>
-        <span className="text-slate-500">{isOpen ? "▲" : "▼"}</span>
+        <ChevronDown
+          size={18}
+          className="text-slate-500 transition-transform duration-200"
+          style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)" }}
+        />
       </button>
       {isOpen && (
-        <div className="bg-slate-100 rounded-b-lg px-4 pt-4 pb-4">
+        <div className="expandable-content bg-slate-100 rounded-b-lg px-4 pt-4 pb-4">
           {children}
         </div>
       )}

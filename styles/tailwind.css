@@ -7,8 +7,8 @@
 }
 
 input:invalid {
-  border: red solid 1px;
-  background-color: rgba(255, 0, 0, 0.1);
+  border: 1px solid #f87171;
+  background-color: rgba(254, 226, 226, 0.5);
 }
 
 .text-input-has-prepend {
@@ -19,34 +19,54 @@ input:invalid {
   padding-right: 82px;
 }
 
+.text-input-has-append-double {
+  padding-right: 148px;
+}
+
+.text-input-append button + button {
+  border-left: 1px solid rgb(203 213 225);
+}
+
 .text-input-prepend {
   position: absolute;
-  top: 0;
+  top: 1px;
+  left: 1px;
+  bottom: 1px;
   padding: 0 8px;
-  bottom: 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
   font-weight: bold;
-  border-right: 1px solid rgb(148 163 184);
+  font-size: 0.875rem;
+  color: #64748b;
+  background-color: #f8fafc;
+  border-right: 1px solid rgb(203 213 225);
+  border-radius: calc(0.5rem - 1px) 0 0 calc(0.5rem - 1px);
 }
 
 .text-input-append {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  right: 0;
+  top: 1px;
+  right: 1px;
+  bottom: 1px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   font-weight: bold;
-  border-left: 1px solid rgb(148 163 184);
+  font-size: 0.875rem;
+  color: #64748b;
+  background-color: #f8fafc;
+  border-left: 1px solid rgb(203 213 225);
+  border-radius: 0 calc(0.5rem - 1px) calc(0.5rem - 1px) 0;
+  overflow: hidden;
 }
 
 button[disabled],
 button[disabled]:hover,
 button[disabled]:focus {
-  background-color: grey;
+  background-color: #1e293b;
+  color: #ffffff;
+  cursor: default;
 }
 
 .tab-bar {
@@ -71,4 +91,39 @@ button[disabled]:focus {
   background-color: #ffffff;
   color: #0f172a;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.expandable-content label:last-child {
+  margin-bottom: 0;
+}
+
+.days-mode-toggle {
+  display: flex;
+  background-color: #f1f5f9;
+  border-radius: 0.5rem;
+  padding: 3px;
+  gap: 3px;
+}
+
+.days-mode-option {
+  flex: 1;
+  padding: 6px 12px;
+  border-radius: 5px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: #64748b;
+  text-align: center;
+  user-select: none;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.days-mode-option-active {
+  background-color: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.results-row + .results-row {
+  border-top: 1px solid #e2e8f0;
 }

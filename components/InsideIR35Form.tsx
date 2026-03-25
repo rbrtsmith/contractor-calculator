@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm } from "../hooks";
 import { TextInput } from "./TextInput";
 import { SelectInput } from "./SelectInput";
+import { ExpandableContent } from "./ExpandableContent";
 import { currencyFormat, convertToPence } from "../utils";
 import { TAXES } from "../constants";
 
@@ -57,7 +58,6 @@ const computeInsideIR35 = ({
   const netAfterDeductions =
     grossContractValue - expenses - pensionContributions;
 
-  // Solve for gross salary: netAfterDeductions = grossSalary + employerNI
   const tentativeGrossSalary =
     (netAfterDeductions +
       employerNIRate * EMPLOYER_NI_SECONDARY_THRESHOLD_PENCE) /
@@ -70,7 +70,6 @@ const computeInsideIR35 = ({
 
   const employerNI = Math.max(0, netAfterDeductions - grossSalary);
 
-  // Personal allowance (tapered above £100k)
   const amountOver100k =
     grossSalary - MAXIMUM_FULL_PERSONAL_ALLOWANCE_THRESHOLD_PENCE;
   const personalAllowance =
@@ -78,7 +77,6 @@ const computeInsideIR35 = ({
       ? TAX_FREE_PERSONAL_ALLOWANCE_PENCE
       : Math.max(0, TAX_FREE_PERSONAL_ALLOWANCE_PENCE - amountOver100k / 2);
 
-  // Income tax
   const higherRateThreshold =
     TAX_FREE_PERSONAL_ALLOWANCE_PENCE + HIGHER_DIVIDEND_TAX_THRESHOLD_PENCE;
   const taxableIncome = Math.max(0, grossSalary - personalAllowance);
@@ -101,7 +99,6 @@ const computeInsideIR35 = ({
     inHigherRateBand * INCOME_TAX_HIGHER_RATE +
     inAdditionalRateBand * INCOME_TAX_ADDITIONAL_RATE;
 
-  // Employee NI
   const employeeNIBasic = Math.max(
     0,
     Math.min(grossSalary, EMPLOYEE_NI_UPPER_EARNINGS_LIMIT_PENCE) -
@@ -130,11 +127,98 @@ const computeInsideIR35 = ({
   };
 };
 
+const StatCard = ({
+  label,
+  value,
+  subtext,
+  accent = false,
+  center = false,
+}: {
+  label: string;
+  value: string;
+  subtext?: string;
+  accent?: boolean;
+  center?: boolean;
+}) => (
+  <div
+    className={`rounded-xl p-4 flex flex-col gap-1 ${center ? "items-center text-center" : ""} ${
+      accent
+        ? "bg-gradient-to-br from-green-400 to-blue-500 text-white"
+        : "bg-white border border-slate-200 shadow-sm"
+    }`}
+  >
+    <span
+      className={`text-xs font-semibold uppercase tracking-wider ${
+        accent ? "text-white/70" : "text-slate-500"
+      }`}
+    >
+      {label}
+    </span>
+    <span
+      className={`text-2xl font-bold leading-tight ${
+        accent ? "text-white" : "text-slate-900"
+      }`}
+    >
+      {value}
+    </span>
+    {subtext && (
+      <span
+        className={`text-sm mt-0.5 ${accent ? "text-white/80" : "text-slate-600"}`}
+      >
+        {subtext}
+      </span>
+    )}
+  </div>
+);
+
+const SectionCard = ({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) => (
+  <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-3">
+    <div className="px-4 py-2.5 border-b border-slate-200 bg-slate-100">
+      <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+        {title}
+      </span>
+    </div>
+    <div className="px-4 py-1">{children}</div>
+  </div>
+);
+
+const Row = ({
+  label,
+  value,
+  bold = false,
+  muted = false,
+}: {
+  label: string;
+  value: string;
+  bold?: boolean;
+  muted?: boolean;
+}) => (
+  <div className="results-row flex justify-between items-center py-2.5 text-sm">
+    <span className={muted ? "text-slate-500" : "text-slate-700"}>{label}</span>
+    <span
+      className={`tabular-nums ${
+        bold ? "font-bold text-slate-900" : muted ? "text-slate-500" : "text-slate-800"
+      }`}
+    >
+      {value}
+    </span>
+  </div>
+);
+
 export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
   const [studentLoanPlan, setStudentLoanPlan] = useState("none");
+  const [daysMode, setDaysMode] = useState<"annual" | "weekly">("annual");
 
   const [values, handleChange] = useForm({
     numberOfDaysWorked: "230",
+    weeksPerYear: "46",
+    daysPerWeek: "5",
     dailyRate: "600.00",
     expenses: "1200.00",
     pensionContributions: "0.00",
@@ -143,15 +227,22 @@ export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
 
   const {
     numberOfDaysWorked,
+    weeksPerYear,
+    daysPerWeek,
     dailyRate,
     expenses,
     pensionContributions,
     taxYear,
   } = values;
 
+  const effectiveDaysWorked =
+    daysMode === "weekly"
+      ? String(Number(weeksPerYear) * Number(daysPerWeek))
+      : numberOfDaysWorked;
+
   const taxes = TAXES[taxYear];
   const result = computeInsideIR35({
-    numberOfDaysWorked: Number(numberOfDaysWorked),
+    numberOfDaysWorked: Number(effectiveDaysWorked),
     dailyRate: convertToPence(dailyRate),
     expenses: convertToPence(expenses),
     pensionContributions: convertToPence(pensionContributions),
@@ -180,22 +271,83 @@ export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
           onChange={handleChange}
           options={taxYears.map((year) => ({ label: year, value: year }))}
         />
-        <SelectInput
-          label="Student loan plan"
-          name="studentLoanPlan"
-          value={studentLoanPlan}
-          onChange={(e) => setStudentLoanPlan(e.currentTarget.value)}
-          options={loanPlanOptions}
-        />
-        <TextInput
-          label="Number of days worked annually"
-          maxLength={3}
-          type="number"
-          step="any"
-          name="numberOfDaysWorked"
-          value={numberOfDaysWorked}
-          onChange={handleChange}
-        />
+        <div className="mb-6 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+          <div className="px-4 py-2.5 border-b border-slate-200 bg-slate-100">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Days worked annually
+            </span>
+          </div>
+          <div className="px-4 pt-3 pb-4">
+          <div className="days-mode-toggle mb-3">
+            <label
+              className={`days-mode-option${daysMode === "annual" ? " days-mode-option-active" : ""}`}
+            >
+              <input
+                type="radio"
+                className="sr-only"
+                checked={daysMode === "annual"}
+                onChange={() => setDaysMode("annual")}
+              />
+              Annual days
+            </label>
+            <label
+              className={`days-mode-option${daysMode === "weekly" ? " days-mode-option-active" : ""}`}
+            >
+              <input
+                type="radio"
+                className="sr-only"
+                checked={daysMode === "weekly"}
+                onChange={() => setDaysMode("weekly")}
+              />
+              Weeks × days per week
+            </label>
+          </div>
+          {daysMode === "annual" ? (
+            <input
+              type="number"
+              step="any"
+              name="numberOfDaysWorked"
+              value={numberOfDaysWorked}
+              onChange={handleChange}
+              className="border border-slate-300 rounded-lg w-full h-10 p-2 bg-white text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+            />
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <div className="pb-1 text-xs text-slate-500">Weeks per year</div>
+                <input
+                  type="number"
+                  step="1"
+                  min={1}
+                  max={52}
+                  name="weeksPerYear"
+                  value={weeksPerYear}
+                  onChange={handleChange}
+                  className="border border-slate-300 rounded-lg w-full h-10 p-2 bg-white text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                />
+              </div>
+              <div>
+                <div className="pb-1 text-xs text-slate-500">Days per week</div>
+                <input
+                  type="number"
+                  step="1"
+                  min={1}
+                  max={7}
+                  name="daysPerWeek"
+                  value={daysPerWeek}
+                  onChange={handleChange}
+                  className="border border-slate-300 rounded-lg w-full h-10 p-2 bg-white text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                />
+              </div>
+            </div>
+          )}
+          {daysMode === "weekly" && (
+            <div className="mt-2 text-xs text-slate-500">
+              = {effectiveDaysWorked} days per year
+            </div>
+          )}
+          </div>
+        </div>
         <TextInput
           label="Daily rate"
           prepend="£"
@@ -206,81 +358,87 @@ export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
           value={dailyRate}
           onChange={handleChange}
         />
-        <TextInput
-          label="Annual allowable expenses"
-          prepend="£"
-          step="0.01"
-          type="number"
-          min={0}
-          name="expenses"
-          value={expenses}
-          onChange={handleChange}
-        />
-        <TextInput
-          label="Annual pension contributions"
-          prepend="£"
-          step="0.01"
-          type="number"
-          min={0}
-          name="pensionContributions"
-          value={pensionContributions}
-          onChange={handleChange}
-        />
-        <ul>
-          <li className="mb-2">
-            <strong>Gross contract value:</strong>{" "}
-            {currencyFormat(result.grossContractValue)}
-          </li>
-          <li className="mb-2">
-            <strong>
-              Employer NI ({taxes.EMPLOYER_NI_RATE_PERCENTAGE}% above{" "}
-              {currencyFormat(taxes.EMPLOYER_NI_SECONDARY_THRESHOLD_PENCE)}):
-            </strong>{" "}
-            {currencyFormat(result.employerNI)}
-          </li>
-          <li className="mb-2">
-            <strong>Gross PAYE salary:</strong>{" "}
-            {currencyFormat(result.grossSalary)}
-          </li>
-          <li className="mb-2">
-            <strong>Income tax:</strong>
-            <ul className="list-disc list-inside">
-              <li>
-                Basic (20%): {currencyFormat(result.incomeTaxBreakdown.basic)}
-              </li>
-              <li>
-                Higher (40%): {currencyFormat(result.incomeTaxBreakdown.higher)}
-              </li>
-              <li>
-                Additional (45%):{" "}
-                {currencyFormat(result.incomeTaxBreakdown.additional)}
-              </li>
-              <li>Total: {currencyFormat(result.incomeTax)}</li>
-            </ul>
-          </li>
-          <li className="mb-2">
-            <strong>
-              Employee NI ({taxes.EMPLOYEE_NI_BASIC_RATE_PERCENTAGE}% up to{" "}
-              {currencyFormat(taxes.EMPLOYEE_NI_UPPER_EARNINGS_LIMIT_PENCE)}, 2%
-              above):
-            </strong>{" "}
-            {currencyFormat(result.employeeNI)}
-          </li>
+        <ExpandableContent title="Student loan">
+          <SelectInput
+            label="Student loan plan"
+            name="studentLoanPlan"
+            value={studentLoanPlan}
+            onChange={(e) => setStudentLoanPlan(e.currentTarget.value)}
+            options={loanPlanOptions}
+          />
+        </ExpandableContent>
+        <ExpandableContent title="Expenses">
+          <TextInput
+            label="Annual allowable expenses"
+            prepend="£"
+            step="0.01"
+            type="number"
+            min={0}
+            name="expenses"
+            value={expenses}
+            onChange={handleChange}
+          />
+          <TextInput
+            label="Annual pension contributions"
+            prepend="£"
+            step="0.01"
+            type="number"
+            min={0}
+            name="pensionContributions"
+            value={pensionContributions}
+            onChange={handleChange}
+          />
+        </ExpandableContent>
+
+        <div className="mt-8">
+          <div className="grid grid-cols-3 gap-3 mb-3">
+            <StatCard
+              label="Gross contract"
+              value={currencyFormat(result.grossContractValue)}
+            />
+            <StatCard
+              label="Employer NI"
+              value={currencyFormat(result.employerNI)}
+            />
+            <StatCard
+              label="Gross PAYE salary"
+              value={currencyFormat(result.grossSalary)}
+            />
+          </div>
+
+          <SectionCard title="Income tax">
+            <Row label="Basic (20%)" value={currencyFormat(result.incomeTaxBreakdown.basic)} />
+            <Row label="Higher (40%)" value={currencyFormat(result.incomeTaxBreakdown.higher)} />
+            <Row label="Additional (45%)" value={currencyFormat(result.incomeTaxBreakdown.additional)} />
+            <Row label="Total income tax" value={currencyFormat(result.incomeTax)} bold />
+          </SectionCard>
+
+          <SectionCard
+            title={`Employee NI (${taxes.EMPLOYEE_NI_BASIC_RATE_PERCENTAGE}% up to ${currencyFormat(taxes.EMPLOYEE_NI_UPPER_EARNINGS_LIMIT_PENCE)}, 2% above)`}
+          >
+            <Row label="Employee NI" value={currencyFormat(result.employeeNI)} bold />
+          </SectionCard>
+
           {studentLoanRepayment > 0 && (
-            <li className="mb-2">
-              <strong>
-                Student loan repayment (
-                {studentLoanPlan === "plan1" ? "Plan 1" : "Plan 2"}):
-              </strong>{" "}
-              {currencyFormat(studentLoanRepayment)}
-            </li>
+            <SectionCard title="Student loan repayment">
+              <Row
+                label={studentLoanPlan === "plan1" ? "Plan 1" : "Plan 2"}
+                value={currencyFormat(studentLoanRepayment)}
+                bold
+              />
+            </SectionCard>
           )}
-          <li className="mb-2">
-            <strong>Net take-home pay:</strong>{" "}
-            {currencyFormat(netPayAfterStudentLoan)}
-          </li>
-        </ul>
-        <p className="mb-2">
+
+          <StatCard
+            label="Net take-home pay"
+            value={currencyFormat(netPayAfterStudentLoan)}
+            subtext={`Monthly: ${currencyFormat(netPayAfterStudentLoan / 12)}`}
+            accent
+            center
+          />
+        </div>
+
+        <p className="my-8 text-center">
           Want to compare against a permanent salary?{" "}
           <a
             href="https://www.thesalarycalculator.co.uk/"

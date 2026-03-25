@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useForm, useCalculate } from "../hooks";
-import { TextInput, SelectInput, Button, InsideIR35Form, ExpandableContent } from "../components";
+import { TextInput, SelectInput, Button, InsideIR35Form, ExpandableContent, ResultsSection } from "../components";
 import { currencyFormat, convertToPounds, convertToPence } from "../utils";
 
 import { TAXES } from "../constants";
@@ -20,9 +20,12 @@ const Home = () => {
     "none",
   ]);
   const [directorEVP11d, setDirectorEVP11d] = useState<string[]>(["0"]);
+  const [daysMode, setDaysMode] = useState<"annual" | "weekly">("annual");
 
   const [values, handleChange] = useForm({
     numberOfDaysWorked: "230",
+    weeksPerYear: "46",
+    daysPerWeek: "5",
     dailyRate: "600.00",
     numberOfDirectors: "1",
     salaryDrawdown: `${convertToPounds(
@@ -36,6 +39,8 @@ const Home = () => {
 
   const {
     numberOfDaysWorked,
+    weeksPerYear,
+    daysPerWeek,
     dailyRate,
     salaryDrawdown,
     numberOfDirectors,
@@ -44,6 +49,11 @@ const Home = () => {
     dividendDrawdown,
     taxYear,
   } = values;
+
+  const effectiveDaysWorked =
+    daysMode === "weekly"
+      ? String(Number(weeksPerYear) * Number(daysPerWeek))
+      : numberOfDaysWorked;
 
   const numDirs = Number(numberOfDirectors);
   const syncedLoanPlans = Array.from(
@@ -79,7 +89,7 @@ const Home = () => {
     retainedProfits,
     totalAfterTaxPay,
   } = useCalculate({
-    numberOfDaysWorked,
+    numberOfDaysWorked: effectiveDaysWorked,
     dailyRate,
     salaryDrawdown,
     numberOfDirectors,
@@ -109,6 +119,10 @@ const Home = () => {
     convertToPence(salaryDrawdown) + convertToPence(dividendDrawdown);
   const higherRateThreshold =
     TAX_FREE_PERSONAL_ALLOWANCE_PENCE + HIGHER_DIVIDEND_TAX_THRESHOLD_PENCE;
+  const maxTaxEfficientDividendPence = Math.min(
+    Math.max(0, higherRateThreshold - convertToPence(salaryDrawdown)),
+    maximumAllowableDividendDrawdown,
+  );
   const bikTaxRate =
     totalIncomePence > ADDITIONAL_DIVIDEND_TAX_THRESHOLD_PENCE
       ? 0.45
@@ -201,6 +215,90 @@ const Home = () => {
             value={numberOfDirectors}
             onChange={handleChange}
           />
+          <div className="mb-6 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+            <div className="px-4 py-2.5 border-b border-slate-200 bg-slate-100">
+              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Days worked annually
+              </span>
+            </div>
+            <div className="px-4 pt-3 pb-4">
+            <div className="days-mode-toggle mb-3">
+              <label className={`days-mode-option${daysMode === "annual" ? " days-mode-option-active" : ""}`}>
+                <input
+                  type="radio"
+                  className="sr-only"
+                  checked={daysMode === "annual"}
+                  onChange={() => setDaysMode("annual")}
+                />
+                Annual days
+              </label>
+              <label className={`days-mode-option${daysMode === "weekly" ? " days-mode-option-active" : ""}`}>
+                <input
+                  type="radio"
+                  className="sr-only"
+                  checked={daysMode === "weekly"}
+                  onChange={() => setDaysMode("weekly")}
+                />
+                Weeks × days per week
+              </label>
+            </div>
+            {daysMode === "annual" ? (
+              <input
+                type="number"
+                step="any"
+                name="numberOfDaysWorked"
+                value={numberOfDaysWorked}
+                onChange={handleChange}
+                className="border border-slate-300 rounded-lg w-full h-10 p-2 bg-white text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+              />
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <div className="pb-1 text-xs text-slate-500">Weeks per year</div>
+                  <input
+                    type="number"
+                    step="1"
+                    min={1}
+                    max={52}
+                    name="weeksPerYear"
+                    value={weeksPerYear}
+                    onChange={handleChange}
+                    className="border border-slate-300 rounded-lg w-full h-10 p-2 bg-white text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                  />
+                </div>
+                <div>
+                  <div className="pb-1 text-xs text-slate-500">Days per week</div>
+                  <input
+                    type="number"
+                    step="1"
+                    min={1}
+                    max={7}
+                    name="daysPerWeek"
+                    value={daysPerWeek}
+                    onChange={handleChange}
+                    className="border border-slate-300 rounded-lg w-full h-10 p-2 bg-white text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                  />
+                </div>
+              </div>
+            )}
+            {daysMode === "weekly" && (
+              <div className="mt-2 text-xs text-slate-500">
+                = {effectiveDaysWorked} days per year
+              </div>
+            )}
+            </div>
+          </div>
+          <TextInput
+            label="Daily rate"
+            prepend="£"
+            type="number"
+            step="0.01"
+            min={0}
+            maxLength={10}
+            name="dailyRate"
+            value={dailyRate}
+            onChange={handleChange}
+          />
           <ExpandableContent title="Student loan">
             {syncedLoanPlans.map((plan, i) => (
               <SelectInput
@@ -225,26 +323,6 @@ const Home = () => {
               />
             ))}
           </ExpandableContent>
-          <TextInput
-            label="Number of days worked annually"
-            maxLength={3}
-            type="number"
-            step="any"
-            name="numberOfDaysWorked"
-            value={numberOfDaysWorked}
-            onChange={handleChange}
-          />
-          <TextInput
-            label="Daily rate"
-            prepend="£"
-            type="number"
-            step="0.01"
-            min={0}
-            maxLength={10}
-            name="dailyRate"
-            value={dailyRate}
-            onChange={handleChange}
-          />
           <ExpandableContent title="Expenses">
             <TextInput
               label="Annual expenses"
@@ -332,30 +410,52 @@ const Home = () => {
           <TextInput
             label={`Annual dividend drawdown ${
               Number(numberOfDirectors) > 1 ? "per director" : ""
-            } (Maximum available is ${currencyFormat(
-              maximumAllowableDividendDrawdown,
+            } (Max tax-efficient: ${currencyFormat(
+              maxTaxEfficientDividendPence,
             )})`}
             prepend="£"
+            appendDouble
             append={
-              <Button
-                disabled={
-                  maximumAllowableDividendDrawdown ===
-                  Math.floor(Number(dividendDrawdown) * 100)
-                }
-                onClick={() => {
-                  const evt = {
-                    currentTarget: {
-                      name: "dividendDrawdown",
-                      value: convertToPounds(
-                        maximumAllowableDividendDrawdown,
-                      ).toFixed(2),
-                    },
-                  } as any as React.FormEvent<HTMLInputElement>;
-                  handleChange(evt);
-                }}
-              >
-                Max out
-              </Button>
+              <div className="flex h-full">
+                <Button
+                  disabled={
+                    maxTaxEfficientDividendPence ===
+                    Math.floor(Number(dividendDrawdown) * 100)
+                  }
+                  onClick={() => {
+                    const evt = {
+                      currentTarget: {
+                        name: "dividendDrawdown",
+                        value: convertToPounds(
+                          maxTaxEfficientDividendPence,
+                        ).toFixed(2),
+                      },
+                    } as any as React.FormEvent<HTMLInputElement>;
+                    handleChange(evt);
+                  }}
+                >
+                  Efficient
+                </Button>
+                <Button
+                  disabled={
+                    maximumAllowableDividendDrawdown ===
+                    Math.floor(Number(dividendDrawdown) * 100)
+                  }
+                  onClick={() => {
+                    const evt = {
+                      currentTarget: {
+                        name: "dividendDrawdown",
+                        value: convertToPounds(
+                          maximumAllowableDividendDrawdown,
+                        ).toFixed(2),
+                      },
+                    } as any as React.FormEvent<HTMLInputElement>;
+                    handleChange(evt);
+                  }}
+                >
+                  All
+                </Button>
+              </div>
             }
             step="0.01"
             type="number"
@@ -366,176 +466,27 @@ const Home = () => {
             value={dividendDrawdown}
             onChange={handleChange}
           />
-          <ul>
-            <li className="mb-2">
-              <strong>Gross revenue:</strong> {currencyFormat(totalRevenue)}
-            </li>
-            <li className="mb-2">
-              <strong>Corporation tax due:</strong>{" "}
-              {currencyFormat(corporationTaxDue)}
-            </li>
-            <li className="mb-2">
-              <strong>Retained profits:</strong>{" "}
-              {currencyFormat(retainedProfits - totalClass1aNI)}
-            </li>
-            <li className="mb-2">
-              <strong>
-                Taxable income
-                {Number(numberOfDirectors) > 1 ? " per director:" : ":"}
-              </strong>{" "}
-              {currencyFormat(totalTaxableIncome)}
-              <p>
-                Is{" "}
-                {totalTaxableIncome <= TAX_FREE_PERSONAL_ALLOWANCE_PENCE
-                  ? "less"
-                  : "greater"}{" "}
-                than your personal allowance of{" "}
-                {currencyFormat(TAX_FREE_PERSONAL_ALLOWANCE_PENCE)}
-              </p>
-            </li>
-            <li className="mb-2">
-              <strong>
-                Tax due on dividends
-                {Number(numberOfDirectors) > 1 ? " per director:" : ":"}
-              </strong>{" "}
-              <em>
-                (First {currencyFormat(DIVIDEND_TAX_FREE_ALLOWANCE_PENCE)} is
-                tax free)
-              </em>
-              <ul className="list-disc list-inside">
-                <li>
-                  Basic ({BASIC_DIVIDEND_TAX_RATE_PERCENTAGE}%):{" "}
-                  {currencyFormat(dividendTaxBreakdown.basic)}
-                </li>
-                <li>
-                  Higher ({HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE}%):{" "}
-                  {currencyFormat(dividendTaxBreakdown.higher)}
-                </li>
-                <li>
-                  Additional ({ADDITIONAL_DIVIDEND_TAX_RATE_PERCENTAGE}%):{" "}
-                  {currencyFormat(dividendTaxBreakdown.additional)}
-                </li>
-                <li>
-                  Total dividend tax due:{" "}
-                  {currencyFormat(dividendTaxBreakdown.total)}
-                </li>
-              </ul>
-            </li>
-            {anyBiK && (
-              <li className="mb-2">
-                <strong>
-                  EV company car BiK ({EV_BIK_RATE_PERCENTAGE}% of P11D):
-                </strong>
-                {numDirs === 1 ? (
-                  <ul className="list-disc list-inside">
-                    <li>
-                      BiK value: {currencyFormat(directorBiK[0].bikValue)}
-                    </li>
-                    <li>
-                      Income tax:{" "}
-                      {currencyFormat(directorBiK[0].incomeTaxOnBik)}
-                    </li>
-                    <li>
-                      Class 1A NI (company cost):{" "}
-                      {currencyFormat(directorBiK[0].class1aNI)}
-                    </li>
-                  </ul>
-                ) : (
-                  <ul className="list-disc list-inside">
-                    {directorBiK.map((bik, i) =>
-                      bik.p11dPence > 0 ? (
-                        <li key={i}>
-                          Director {i + 1}
-                          <ul
-                            className="list-inside pl-4"
-                            style={{ listStyleType: "circle" }}
-                          >
-                            <li>BiK value: {currencyFormat(bik.bikValue)}</li>
-                            <li>
-                              Income tax: {currencyFormat(bik.incomeTaxOnBik)}
-                            </li>
-                            <li>
-                              Class 1A NI (company cost):{" "}
-                              {currencyFormat(bik.class1aNI)}
-                            </li>
-                          </ul>
-                        </li>
-                      ) : null,
-                    )}
-                  </ul>
-                )}
-              </li>
-            )}
-            {anyStudentLoan && (
-              <li className="mb-2">
-                <strong>
-                  Student loan repayment
-                  {numDirs > 1 ? "s" : ""}:
-                </strong>
-                {numDirs === 1 ? (
-                  <>
-                    {" "}
-                    ({syncedLoanPlans[0] === "plan1" ? "Plan 1" : "Plan 2"}
-                    ): {currencyFormat(studentLoanRepayments[0])}
-                  </>
-                ) : (
-                  <ul className="list-disc list-inside">
-                    {syncedLoanPlans.map((plan, i) =>
-                      plan !== "none" ? (
-                        <li key={i}>
-                          Director {i + 1} (
-                          {plan === "plan1" ? "Plan 1" : "Plan 2"}
-                          ): {currencyFormat(studentLoanRepayments[i])}
-                        </li>
-                      ) : null,
-                    )}
-                  </ul>
-                )}
-              </li>
-            )}
-            <li className="mb-2">
-              {numDirs > 1 ? (
-                <>
-                  <strong>Net pay per director:</strong>
-                  <ul className="list-disc list-inside">
-                    {syncedLoanPlans.map((_, i) => (
-                      <li key={i}>
-                        Director {i + 1}:{" "}
-                        {currencyFormat(
-                          totalAfterTaxPay -
-                            studentLoanRepayments[i] -
-                            directorBiK[i].incomeTaxOnBik,
-                        )}
-                      </li>
-                    ))}
-                    <li>
-                      Combined:{" "}
-                      {currencyFormat(
-                        syncedLoanPlans.reduce(
-                          (sum, _, i) =>
-                            sum +
-                            totalAfterTaxPay -
-                            studentLoanRepayments[i] -
-                            directorBiK[i].incomeTaxOnBik,
-                          0,
-                        ),
-                      )}
-                    </li>
-                  </ul>
-                </>
-              ) : (
-                <>
-                  <strong>Net pay:</strong>{" "}
-                  {currencyFormat(
-                    totalAfterTaxPay -
-                      studentLoanRepayments[0] -
-                      directorBiK[0].incomeTaxOnBik,
-                  )}
-                </>
-              )}
-            </li>
-          </ul>
-          <p className="mb-2">
+          <ResultsSection
+            totalRevenue={totalRevenue}
+            corporationTaxDue={corporationTaxDue}
+            retainedProfits={retainedProfits - totalClass1aNI}
+            totalTaxableIncome={totalTaxableIncome}
+            TAX_FREE_PERSONAL_ALLOWANCE_PENCE={TAX_FREE_PERSONAL_ALLOWANCE_PENCE}
+            DIVIDEND_TAX_FREE_ALLOWANCE_PENCE={DIVIDEND_TAX_FREE_ALLOWANCE_PENCE}
+            BASIC_DIVIDEND_TAX_RATE_PERCENTAGE={BASIC_DIVIDEND_TAX_RATE_PERCENTAGE}
+            HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE={HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE}
+            ADDITIONAL_DIVIDEND_TAX_RATE_PERCENTAGE={ADDITIONAL_DIVIDEND_TAX_RATE_PERCENTAGE}
+            dividendTaxBreakdown={dividendTaxBreakdown}
+            EV_BIK_RATE_PERCENTAGE={EV_BIK_RATE_PERCENTAGE}
+            numDirs={numDirs}
+            directorBiK={directorBiK}
+            anyBiK={anyBiK}
+            syncedLoanPlans={syncedLoanPlans}
+            studentLoanRepayments={studentLoanRepayments}
+            anyStudentLoan={anyStudentLoan}
+            totalAfterTaxPay={totalAfterTaxPay}
+          />
+          <p className="my-8 text-center">
             Want to compare against a permanent salary?{" "}
             <a
               href="https://www.thesalarycalculator.co.uk/"
