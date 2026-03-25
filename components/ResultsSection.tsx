@@ -16,6 +16,8 @@ interface DividendTaxBreakdown {
 
 interface Props {
   totalRevenue: number;
+  generalExpenses: number;
+  pensionContributions: number;
   corporationTaxDue: number;
   retainedProfits: number;
   totalTaxableIncome: number;
@@ -29,6 +31,7 @@ interface Props {
   numDirs: number;
   directorBiK: DirectorBiK[];
   anyBiK: boolean;
+  directorDividendTaxAdjustment: number[];
   syncedLoanPlans: string[];
   studentLoanRepayments: number[];
   anyStudentLoan: boolean;
@@ -121,6 +124,8 @@ const Row = ({
 
 export const ResultsSection = ({
   totalRevenue,
+  generalExpenses,
+  pensionContributions,
   corporationTaxDue,
   retainedProfits,
   totalTaxableIncome,
@@ -134,6 +139,7 @@ export const ResultsSection = ({
   numDirs,
   directorBiK,
   anyBiK,
+  directorDividendTaxAdjustment,
   syncedLoanPlans,
   studentLoanRepayments,
   anyStudentLoan,
@@ -142,7 +148,8 @@ export const ResultsSection = ({
   const netPayPerDirector = (i: number) =>
     totalAfterTaxPay -
     studentLoanRepayments[i] -
-    directorBiK[i].incomeTaxOnBik;
+    directorBiK[i].incomeTaxOnBik -
+    directorDividendTaxAdjustment[i];
 
   const combinedNetPay = Array.from({ length: numDirs }, (_, i) =>
     netPayPerDirector(i),
@@ -154,17 +161,17 @@ export const ResultsSection = ({
         Financial summary
       </h2>
       {/* Company overview */}
-      <div className="grid grid-cols-3 gap-3 mb-3">
-        <StatCard label="Gross revenue" value={currencyFormat(totalRevenue)} />
-        <StatCard
-          label="Corporation tax"
-          value={currencyFormat(corporationTaxDue)}
-        />
-        <StatCard
-          label="Retained profits"
-          value={currencyFormat(retainedProfits)}
-        />
-      </div>
+      <SectionCard title="Company overview">
+        <Row label="Gross revenue" value={currencyFormat(totalRevenue)} bold />
+        {generalExpenses > 0 && (
+          <Row label="General expenses" value={`− ${currencyFormat(generalExpenses)}`} muted />
+        )}
+        {pensionContributions > 0 && (
+          <Row label="Pension contributions" value={`− ${currencyFormat(pensionContributions)}`} muted />
+        )}
+        <Row label="Corporation tax" value={`− ${currencyFormat(corporationTaxDue)}`} muted />
+        <Row label="Retained profits" value={currencyFormat(retainedProfits)} bold />
+      </SectionCard>
 
       {/* Taxable income */}
       <SectionCard
@@ -226,6 +233,12 @@ export const ResultsSection = ({
                 label="Income tax on BiK"
                 value={currencyFormat(directorBiK[0].incomeTaxOnBik)}
               />
+              {directorDividendTaxAdjustment[0] > 0 && (
+                <Row
+                  label="Additional dividend tax (BiK pushes into higher rate)"
+                  value={currencyFormat(directorDividendTaxAdjustment[0])}
+                />
+              )}
               <Row
                 label="Class 1A NI (company cost)"
                 value={currencyFormat(directorBiK[0].class1aNI)}
@@ -249,6 +262,12 @@ export const ResultsSection = ({
                       label="Income tax on BiK"
                       value={currencyFormat(bik.incomeTaxOnBik)}
                     />
+                    {directorDividendTaxAdjustment[i] > 0 && (
+                      <Row
+                        label="Additional dividend tax (BiK pushes into higher rate)"
+                        value={currencyFormat(directorDividendTaxAdjustment[i])}
+                      />
+                    )}
                     <Row
                       label="Class 1A NI (company cost)"
                       value={currencyFormat(bik.class1aNI)}

@@ -394,20 +394,17 @@ export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
           <h2 className="text-2xl font-extrabold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-500">
             Financial summary
           </h2>
-          <div className="grid grid-cols-3 gap-3 mb-3">
-            <StatCard
-              label="Gross contract"
-              value={currencyFormat(result.grossContractValue)}
-            />
-            <StatCard
-              label="Employer NI"
-              value={currencyFormat(result.employerNI)}
-            />
-            <StatCard
-              label="Gross PAYE salary"
-              value={currencyFormat(result.grossSalary)}
-            />
-          </div>
+          <SectionCard title="Company overview">
+            <Row label="Gross contract value" value={currencyFormat(result.grossContractValue)} bold />
+            {convertToPence(expenses) > 0 && (
+              <Row label="Allowable expenses" value={`− ${currencyFormat(convertToPence(expenses))}`} muted />
+            )}
+            {convertToPence(pensionContributions) > 0 && (
+              <Row label="Pension contributions" value={`− ${currencyFormat(convertToPence(pensionContributions))}`} muted />
+            )}
+            <Row label="Employer NI" value={`− ${currencyFormat(result.employerNI)}`} muted />
+            <Row label="Gross PAYE salary" value={currencyFormat(result.grossSalary)} bold />
+          </SectionCard>
 
           <SectionCard title="Income tax">
             <Row label="Basic (20%)" value={currencyFormat(result.incomeTaxBreakdown.basic)} />

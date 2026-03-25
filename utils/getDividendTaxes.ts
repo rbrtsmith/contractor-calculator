@@ -3,10 +3,12 @@ import { Taxes } from "../constants";
 export const getDividendTaxes = ({
   dividendDrawdown,
   salaryDrawdown,
+  additionalEmploymentIncome = 0,
   taxes,
 }: {
   dividendDrawdown: number;
   salaryDrawdown: number;
+  additionalEmploymentIncome?: number;
   taxes: Taxes;
 }) => {
   const {
@@ -20,7 +22,8 @@ export const getDividendTaxes = ({
     ADDITIONAL_DIVIDEND_TAX_THRESHOLD_PENCE,
   } = taxes;
 
-  const totalIncome = salaryDrawdown + dividendDrawdown;
+  // BiK (additionalEmploymentIncome) is non-savings income, stacks before dividends
+  const totalIncome = salaryDrawdown + additionalEmploymentIncome + dividendDrawdown;
 
   // Personal allowance, tapered by £1 for every £2 over £100k
   const amountOver100k = totalIncome - MAXIMUM_FULL_PERSONAL_ALLOWANCE_THRESHOLD_PENCE;
@@ -29,8 +32,11 @@ export const getDividendTaxes = ({
       ? TAX_FREE_PERSONAL_ALLOWANCE_PENCE
       : Math.max(0, TAX_FREE_PERSONAL_ALLOWANCE_PENCE - amountOver100k / 2);
 
-  // Tax-free dividends = any personal allowance remaining after salary + dividend allowance
-  const personalAllowanceForDividends = Math.max(0, personalAllowance - salaryDrawdown);
+  // Tax-free dividends = any personal allowance remaining after salary + BiK + dividend allowance
+  const personalAllowanceForDividends = Math.max(
+    0,
+    personalAllowance - salaryDrawdown - additionalEmploymentIncome,
+  );
   const taxFreeDividends = personalAllowanceForDividends + DIVIDEND_TAX_FREE_ALLOWANCE_PENCE;
   const taxableDividends = Math.max(0, dividendDrawdown - taxFreeDividends);
 

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useForm, useCalculate } from "../hooks";
 import { TextInput, SelectInput, Button, InsideIR35Form, ExpandableContent, ResultsSection } from "../components";
-import { currencyFormat, convertToPounds, convertToPence } from "../utils";
+import { currencyFormat, convertToPounds, convertToPence, getDividendTaxes } from "../utils";
 
 import { TAXES } from "../constants";
 
@@ -129,27 +129,54 @@ const Home = () => {
     Math.max(0, higherRateThreshold - convertToPence(salaryDrawdown)),
     maximumAllowableDividendDrawdown,
   );
-  const bikTaxRate =
-    totalIncomePence > ADDITIONAL_DIVIDEND_TAX_THRESHOLD_PENCE
-      ? 0.45
-      : totalIncomePence > higherRateThreshold
-        ? 0.4
-        : totalIncomePence > TAX_FREE_PERSONAL_ALLOWANCE_PENCE
-          ? 0.2
-          : 0;
-
   const directorBiK = syncedEVP11d.map((p11d) => {
     const p11dPence = convertToPence(p11d);
     const bikValue = p11dPence * (EV_BIK_RATE_PERCENTAGE / 100);
+
+    const bikStart = convertToPence(salaryDrawdown);
+    const bikEnd = convertToPence(salaryDrawdown) + bikValue;
+
+    const bikInBasic = Math.max(
+      0,
+      Math.min(bikEnd, higherRateThreshold) -
+        Math.max(bikStart, TAX_FREE_PERSONAL_ALLOWANCE_PENCE),
+    );
+    const bikInHigher = Math.max(
+      0,
+      Math.min(bikEnd, ADDITIONAL_DIVIDEND_TAX_THRESHOLD_PENCE) -
+        Math.max(bikStart, higherRateThreshold),
+    );
+    const bikInAdditional = Math.max(
+      0,
+      bikEnd - Math.max(bikStart, ADDITIONAL_DIVIDEND_TAX_THRESHOLD_PENCE),
+    );
+
+    const incomeTaxOnBik =
+      bikInBasic * 0.2 + bikInHigher * 0.4 + bikInAdditional * 0.45;
+
     return {
       p11dPence,
       bikValue,
-      incomeTaxOnBik: bikValue * bikTaxRate,
+      incomeTaxOnBik,
       class1aNI: bikValue * (EMPLOYER_NI_RATE_PERCENTAGE / 100),
     };
   });
   const anyBiK = directorBiK.some((b) => b.p11dPence > 0);
   const totalClass1aNI = directorBiK.reduce((sum, b) => sum + b.class1aNI, 0);
+
+  // Per-director extra dividend tax caused by BiK pushing dividends into a higher band.
+  // Only applies when total income + BiK crosses the higher rate threshold.
+  const directorDividendTaxAdjustment = directorBiK.map((bik) => {
+    if (bik.bikValue === 0) return 0;
+    if (totalIncomePence + bik.bikValue <= higherRateThreshold) return 0;
+    const withBiK = getDividendTaxes({
+      dividendDrawdown: convertToPence(dividendDrawdown),
+      salaryDrawdown: convertToPence(salaryDrawdown),
+      additionalEmploymentIncome: bik.bikValue,
+      taxes,
+    });
+    return Math.max(0, withBiK.total - dividendTaxBreakdown.total);
+  });
 
   return (
     <main>
@@ -474,6 +501,8 @@ const Home = () => {
           />
           <ResultsSection
             totalRevenue={totalRevenue}
+            generalExpenses={convertToPence(generalExpenses)}
+            pensionContributions={convertToPence(pensionContributions)}
             corporationTaxDue={corporationTaxDue}
             retainedProfits={retainedProfits - totalClass1aNI}
             totalTaxableIncome={totalTaxableIncome}
@@ -487,6 +516,7 @@ const Home = () => {
             numDirs={numDirs}
             directorBiK={directorBiK}
             anyBiK={anyBiK}
+            directorDividendTaxAdjustment={directorDividendTaxAdjustment}
             syncedLoanPlans={syncedLoanPlans}
             studentLoanRepayments={studentLoanRepayments}
             anyStudentLoan={anyStudentLoan}
