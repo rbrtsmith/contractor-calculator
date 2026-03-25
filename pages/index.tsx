@@ -69,6 +69,7 @@ const Home = () => {
 
   const {
     TAX_FREE_PERSONAL_ALLOWANCE_PENCE,
+    MAXIMUM_FULL_PERSONAL_ALLOWANCE_THRESHOLD_PENCE,
     MAX_TAX_EFFICIENT_SALARY_PENCE,
     BASIC_DIVIDEND_TAX_RATE_PERCENTAGE,
     HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE,
@@ -117,6 +118,11 @@ const Home = () => {
 
   const totalIncomePence =
     convertToPence(salaryDrawdown) + convertToPence(dividendDrawdown);
+  const effectivePersonalAllowancePence = Math.max(
+    0,
+    TAX_FREE_PERSONAL_ALLOWANCE_PENCE -
+      Math.max(0, totalIncomePence - MAXIMUM_FULL_PERSONAL_ALLOWANCE_THRESHOLD_PENCE) / 2,
+  );
   const higherRateThreshold =
     TAX_FREE_PERSONAL_ALLOWANCE_PENCE + HIGHER_DIVIDEND_TAX_THRESHOLD_PENCE;
   const maxTaxEfficientDividendPence = Math.min(
@@ -471,7 +477,7 @@ const Home = () => {
             corporationTaxDue={corporationTaxDue}
             retainedProfits={retainedProfits - totalClass1aNI}
             totalTaxableIncome={totalTaxableIncome}
-            TAX_FREE_PERSONAL_ALLOWANCE_PENCE={TAX_FREE_PERSONAL_ALLOWANCE_PENCE}
+            TAX_FREE_PERSONAL_ALLOWANCE_PENCE={effectivePersonalAllowancePence}
             DIVIDEND_TAX_FREE_ALLOWANCE_PENCE={DIVIDEND_TAX_FREE_ALLOWANCE_PENCE}
             BASIC_DIVIDEND_TAX_RATE_PERCENTAGE={BASIC_DIVIDEND_TAX_RATE_PERCENTAGE}
             HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE={HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE}
