@@ -140,7 +140,8 @@ const StatCard = ({
   accent?: boolean;
   center?: boolean;
 }) => (
-  <div
+  <section
+    aria-label={label}
     className={`rounded-xl p-4 flex flex-col gap-1 ${center ? "items-center text-center" : ""} ${
       accent
         ? "bg-gradient-to-br from-green-400 to-blue-500 text-white"
@@ -168,7 +169,7 @@ const StatCard = ({
         {subtext}
       </span>
     )}
-  </div>
+  </section>
 );
 
 const SectionCard = ({
@@ -178,14 +179,14 @@ const SectionCard = ({
   title: string;
   children: React.ReactNode;
 }) => (
-  <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-3">
+  <section aria-label={title} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-3">
     <div className="px-4 py-2.5 border-b border-slate-200 bg-slate-100">
-      <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
         {title}
-      </span>
+      </h3>
     </div>
     <div className="px-4 py-1">{children}</div>
-  </div>
+  </section>
 );
 
 const Row = ({
@@ -306,6 +307,7 @@ export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
             <input
               type="number"
               step="any"
+              aria-label="Days worked annually"
               name="numberOfDaysWorked"
               value={numberOfDaysWorked}
               onChange={handleChange}
@@ -313,7 +315,7 @@ export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
             />
           ) : (
             <div className="grid grid-cols-2 gap-3">
-              <div>
+              <label className="block">
                 <div className="pb-1 text-xs text-slate-500">Weeks per year</div>
                 <input
                   type="number"
@@ -325,8 +327,8 @@ export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
                   onChange={handleChange}
                   className="border border-slate-300 rounded-lg w-full h-10 p-2 bg-white text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
                 />
-              </div>
-              <div>
+              </label>
+              <label className="block">
                 <div className="pb-1 text-xs text-slate-500">Days per week</div>
                 <input
                   type="number"
@@ -338,7 +340,7 @@ export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
                   onChange={handleChange}
                   className="border border-slate-300 rounded-lg w-full h-10 p-2 bg-white text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
                 />
-              </div>
+              </label>
             </div>
           )}
           {daysMode === "weekly" && (

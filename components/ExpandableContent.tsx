@@ -13,6 +13,7 @@ export const ExpandableContent = ({ title, children }: Props) => {
     <div className="mb-6">
       <button
         type="button"
+        aria-expanded={isOpen}
         onClick={() => setIsOpen(!isOpen)}
         className={`w-full flex justify-between items-center px-4 py-3 bg-slate-100 text-slate-900 font-bold text-left ${isOpen ? "rounded-t-lg" : "rounded-lg"}`}
       >
