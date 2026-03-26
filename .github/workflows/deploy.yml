@@ -22,8 +22,14 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type check
+        run: pnpm exec tsc --noEmit
+
       - name: Run tests
-        run: pnpm exec vitest run
+        run: pnpm test
 
   deploy:
     needs: test

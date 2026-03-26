@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { useForm, useCalculate } from "../hooks";
 import { TextInput, SelectInput, Button, InsideIR35Form, ExpandableContent, ResultsSection } from "../components";
