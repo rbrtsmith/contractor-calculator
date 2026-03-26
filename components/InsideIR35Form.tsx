@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useForm } from "../hooks";
 import { TextInput } from "./TextInput";
 import { SelectInput } from "./SelectInput";
@@ -185,7 +185,7 @@ const SectionCard = ({
         {title}
       </h3>
     </div>
-    <div className="px-4 py-1">{children}</div>
+    <dl className="px-4 py-1">{children}</dl>
   </section>
 );
 
@@ -199,18 +199,22 @@ const Row = ({
   value: string;
   bold?: boolean;
   muted?: boolean;
-}) => (
-  <div className="results-row flex justify-between items-center py-2.5 text-sm">
-    <span className={muted ? "text-slate-500" : "text-slate-700"}>{label}</span>
-    <span
-      className={`tabular-nums ${
-        bold ? "font-bold text-slate-900" : muted ? "text-slate-500" : "text-slate-800"
-      }`}
-    >
-      {value}
-    </span>
-  </div>
-);
+}) => {
+  const id = useId();
+  return (
+    <div className="results-row flex justify-between items-center py-2.5 text-sm">
+      <dt id={id} className={muted ? "text-slate-500" : "text-slate-700"}>{label}</dt>
+      <dd
+        aria-labelledby={id}
+        className={`tabular-nums ${
+          bold ? "font-bold text-slate-900" : muted ? "text-slate-500" : "text-slate-800"
+        }`}
+      >
+        {value}
+      </dd>
+    </div>
+  );
+};
 
 export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
   const [studentLoanPlan, setStudentLoanPlan] = useState("none");
