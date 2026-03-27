@@ -1,3 +1,22 @@
+export const TAX_YEARS = [
+  "2021/22",
+  "2022/23",
+  "2023/24",
+  "2024/25",
+  "2025/26",
+  "2026/27",
+] as const;
+
+export type TaxYear = (typeof TAX_YEARS)[number];
+
+export const isTaxYear = (value: string): value is TaxYear =>
+  (TAX_YEARS as readonly string[]).includes(value);
+
+export const asTaxYear = (value: string): TaxYear => {
+  if (isTaxYear(value)) return value;
+  return TAX_YEARS[TAX_YEARS.length - 1];
+};
+
 export type Taxes = {
   MAX_TAX_EFFICIENT_SALARY_PENCE: number;
   CORPORATION_TAX_PERCENTAGE: number;
@@ -19,7 +38,7 @@ export type Taxes = {
   EV_BIK_RATE_PERCENTAGE: number;
 };
 
-export const TAXES: { [key: string]: Taxes } = {
+export const TAXES: Record<TaxYear, Taxes> = {
   "2021/22": {
     MAX_TAX_EFFICIENT_SALARY_PENCE: 12564 * 100,
     CORPORATION_TAX_PERCENTAGE: 19,
@@ -166,20 +185,3 @@ export const TAXES: { [key: string]: Taxes } = {
     EV_BIK_RATE_PERCENTAGE: 4,
   },
 };
-
-// const UPPER_LIMIT = 250000;
-// const PROFIT_MULTIPLIER = 0.25;
-// const MARGINAL_RATE_MULTIPLIER = 3 / 200;
-
-// const profit = 120000;
-// // step 1
-// const profitPlus25Percent = profit * PROFIT_MULTIPLIER;
-// console.log("profitPlus25Percent", profitPlus25Percent);
-
-// // step 3
-// const marginalReleif = (UPPER_LIMIT - profit) * MARGINAL_RATE_MULTIPLIER;
-// console.log("marginalReleif", marginalReleif);
-
-// // step 4
-// const taxDue = profitPlus25Percent - marginalReleif;
-// console.log("taxDue should be 28,050.00", taxDue);

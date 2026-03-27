@@ -4,16 +4,7 @@ import { TextInput } from "./TextInput";
 import { SelectInput } from "./SelectInput";
 import { ExpandableContent } from "./ExpandableContent";
 import { currencyFormat, convertToPence } from "../utils";
-import { TAXES } from "../constants";
-
-const taxYears = [
-  "2021/22",
-  "2022/23",
-  "2023/24",
-  "2024/25",
-  "2025/26",
-  "2026/27",
-];
+import { TAXES, TAX_YEARS, Taxes, asTaxYear } from "../constants";
 
 const INCOME_TAX_BASIC_RATE = 0.2;
 const INCOME_TAX_HIGHER_RATE = 0.4;
@@ -37,7 +28,7 @@ const computeInsideIR35 = ({
   dailyRate: number;
   expenses: number;
   pensionContributions: number;
-  taxes: (typeof TAXES)[string];
+  taxes: Taxes;
 }) => {
   const {
     EMPLOYER_NI_SECONDARY_THRESHOLD_PENCE,
@@ -179,7 +170,10 @@ const SectionCard = ({
   title: string;
   children: React.ReactNode;
 }) => (
-  <section aria-label={title} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-3">
+  <section
+    aria-label={title}
+    className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-3"
+  >
     <div className="px-4 py-2.5 border-b border-slate-200 bg-slate-100">
       <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
         {title}
@@ -203,11 +197,17 @@ const Row = ({
   const id = useId();
   return (
     <div className="results-row flex justify-between items-center py-2.5 text-sm">
-      <dt id={id} className={muted ? "text-slate-500" : "text-slate-700"}>{label}</dt>
+      <dt id={id} className={muted ? "text-slate-500" : "text-slate-700"}>
+        {label}
+      </dt>
       <dd
         aria-labelledby={id}
         className={`tabular-nums ${
-          bold ? "font-bold text-slate-900" : muted ? "text-slate-500" : "text-slate-800"
+          bold
+            ? "font-bold text-slate-900"
+            : muted
+              ? "text-slate-500"
+              : "text-slate-800"
         }`}
       >
         {value}
@@ -227,7 +227,7 @@ export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
     dailyRate: "600.00",
     expenses: "1200.00",
     pensionContributions: "0.00",
-    taxYear: taxYears[taxYears.length - 1],
+    taxYear: TAX_YEARS[TAX_YEARS.length - 1],
   });
 
   const {
@@ -245,7 +245,7 @@ export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
       ? String(Number(weeksPerYear) * Number(daysPerWeek))
       : numberOfDaysWorked;
 
-  const taxes = TAXES[taxYear];
+  const taxes = TAXES[asTaxYear(taxYear)];
   const result = computeInsideIR35({
     numberOfDaysWorked: Number(effectiveDaysWorked),
     dailyRate: convertToPence(dailyRate),
@@ -274,7 +274,7 @@ export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
           name="taxYear"
           value={taxYear}
           onChange={handleChange}
-          options={taxYears.map((year) => ({ label: year, value: year }))}
+          options={TAX_YEARS.map((year) => ({ label: year, value: year }))}
         />
         <div className="mb-6 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
           <div className="px-4 py-2.5 border-b border-slate-200 bg-slate-100">
@@ -283,75 +283,79 @@ export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
             </span>
           </div>
           <div className="px-4 pt-3 pb-4">
-          <div className="days-mode-toggle mb-3">
-            <label
-              className={`days-mode-option${daysMode === "annual" ? " days-mode-option-active" : ""}`}
-            >
-              <input
-                type="radio"
-                className="sr-only"
-                checked={daysMode === "annual"}
-                onChange={() => setDaysMode("annual")}
-              />
-              Annual days
-            </label>
-            <label
-              className={`days-mode-option${daysMode === "weekly" ? " days-mode-option-active" : ""}`}
-            >
-              <input
-                type="radio"
-                className="sr-only"
-                checked={daysMode === "weekly"}
-                onChange={() => setDaysMode("weekly")}
-              />
-              Weeks × days per week
-            </label>
-          </div>
-          {daysMode === "annual" ? (
-            <input
-              type="number"
-              step="any"
-              aria-label="Days worked annually"
-              name="numberOfDaysWorked"
-              value={numberOfDaysWorked}
-              onChange={handleChange}
-              className="border border-slate-300 rounded-lg w-full h-10 p-2 bg-white text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
-            />
-          ) : (
-            <div className="grid grid-cols-2 gap-3">
-              <label className="block">
-                <div className="pb-1 text-xs text-slate-500">Weeks per year</div>
+            <div className="days-mode-toggle mb-3">
+              <label
+                className={`days-mode-option${daysMode === "annual" ? " days-mode-option-active" : ""}`}
+              >
                 <input
-                  type="number"
-                  step="1"
-                  min={1}
-                  max={52}
-                  name="weeksPerYear"
-                  value={weeksPerYear}
-                  onChange={handleChange}
-                  className="border border-slate-300 rounded-lg w-full h-10 p-2 bg-white text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                  type="radio"
+                  className="sr-only"
+                  checked={daysMode === "annual"}
+                  onChange={() => setDaysMode("annual")}
                 />
+                Annual days
               </label>
-              <label className="block">
-                <div className="pb-1 text-xs text-slate-500">Days per week</div>
+              <label
+                className={`days-mode-option${daysMode === "weekly" ? " days-mode-option-active" : ""}`}
+              >
                 <input
-                  type="number"
-                  step="1"
-                  min={1}
-                  max={7}
-                  name="daysPerWeek"
-                  value={daysPerWeek}
-                  onChange={handleChange}
-                  className="border border-slate-300 rounded-lg w-full h-10 p-2 bg-white text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                  type="radio"
+                  className="sr-only"
+                  checked={daysMode === "weekly"}
+                  onChange={() => setDaysMode("weekly")}
                 />
+                Weeks × days per week
               </label>
             </div>
-          )}
-          {daysMode === "weekly" && (
-            <div className="mt-2 text-xs text-slate-500">
-              = {effectiveDaysWorked} days per year
-            </div>
-          )}
+            {daysMode === "annual" ? (
+              <input
+                type="number"
+                step="any"
+                aria-label="Days worked annually"
+                name="numberOfDaysWorked"
+                value={numberOfDaysWorked}
+                onChange={handleChange}
+                className="border border-slate-300 rounded-lg w-full h-10 p-2 bg-white text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+              />
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <label className="block">
+                  <div className="pb-1 text-xs text-slate-500">
+                    Weeks per year
+                  </div>
+                  <input
+                    type="number"
+                    step="1"
+                    min={1}
+                    max={52}
+                    name="weeksPerYear"
+                    value={weeksPerYear}
+                    onChange={handleChange}
+                    className="border border-slate-300 rounded-lg w-full h-10 p-2 bg-white text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                  />
+                </label>
+                <label className="block">
+                  <div className="pb-1 text-xs text-slate-500">
+                    Days per week
+                  </div>
+                  <input
+                    type="number"
+                    step="1"
+                    min={1}
+                    max={7}
+                    name="daysPerWeek"
+                    value={daysPerWeek}
+                    onChange={handleChange}
+                    className="border border-slate-300 rounded-lg w-full h-10 p-2 bg-white text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                  />
+                </label>
+              </div>
+            )}
+            {daysMode === "weekly" && (
+              <div className="mt-2 text-xs text-slate-500">
+                = {effectiveDaysWorked} days per year
+              </div>
+            )}
           </div>
         </div>
         <TextInput
@@ -401,28 +405,65 @@ export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
             Financial summary
           </h2>
           <SectionCard title="Company overview">
-            <Row label="Gross contract value" value={currencyFormat(result.grossContractValue)} bold />
+            <Row
+              label="Gross contract value"
+              value={currencyFormat(result.grossContractValue)}
+              bold
+            />
             {convertToPence(expenses) > 0 && (
-              <Row label="Allowable expenses" value={`− ${currencyFormat(convertToPence(expenses))}`} muted />
+              <Row
+                label="Allowable expenses"
+                value={`− ${currencyFormat(convertToPence(expenses))}`}
+                muted
+              />
             )}
             {convertToPence(pensionContributions) > 0 && (
-              <Row label="Pension contributions" value={`− ${currencyFormat(convertToPence(pensionContributions))}`} muted />
+              <Row
+                label="Pension contributions"
+                value={`− ${currencyFormat(convertToPence(pensionContributions))}`}
+                muted
+              />
             )}
-            <Row label="Employer NI" value={`− ${currencyFormat(result.employerNI)}`} muted />
-            <Row label="Gross PAYE salary" value={currencyFormat(result.grossSalary)} bold />
+            <Row
+              label="Employer NI"
+              value={`− ${currencyFormat(result.employerNI)}`}
+              muted
+            />
+            <Row
+              label="Gross PAYE salary"
+              value={currencyFormat(result.grossSalary)}
+              bold
+            />
           </SectionCard>
 
           <SectionCard title="Income tax">
-            <Row label="Basic (20%)" value={currencyFormat(result.incomeTaxBreakdown.basic)} />
-            <Row label="Higher (40%)" value={currencyFormat(result.incomeTaxBreakdown.higher)} />
-            <Row label="Additional (45%)" value={currencyFormat(result.incomeTaxBreakdown.additional)} />
-            <Row label="Total income tax" value={currencyFormat(result.incomeTax)} bold />
+            <Row
+              label="Basic (20%)"
+              value={currencyFormat(result.incomeTaxBreakdown.basic)}
+            />
+            <Row
+              label="Higher (40%)"
+              value={currencyFormat(result.incomeTaxBreakdown.higher)}
+            />
+            <Row
+              label="Additional (45%)"
+              value={currencyFormat(result.incomeTaxBreakdown.additional)}
+            />
+            <Row
+              label="Total income tax"
+              value={currencyFormat(result.incomeTax)}
+              bold
+            />
           </SectionCard>
 
           <SectionCard
             title={`Employee NI (${taxes.EMPLOYEE_NI_BASIC_RATE_PERCENTAGE}% up to ${currencyFormat(taxes.EMPLOYEE_NI_UPPER_EARNINGS_LIMIT_PENCE)}, 2% above)`}
           >
-            <Row label="Employee NI" value={currencyFormat(result.employeeNI)} bold />
+            <Row
+              label="Employee NI"
+              value={currencyFormat(result.employeeNI)}
+              bold
+            />
           </SectionCard>
 
           {studentLoanRepayment > 0 && (

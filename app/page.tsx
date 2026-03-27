@@ -2,19 +2,22 @@
 
 import { useState } from "react";
 import { useForm, useCalculate } from "../hooks";
-import { TextInput, SelectInput, Button, InsideIR35Form, ExpandableContent, ResultsSection } from "../components";
-import { currencyFormat, convertToPounds, convertToPence, getDividendTaxes } from "../utils";
+import {
+  TextInput,
+  SelectInput,
+  Button,
+  InsideIR35Form,
+  ExpandableContent,
+  ResultsSection,
+} from "../components";
+import {
+  currencyFormat,
+  convertToPounds,
+  convertToPence,
+  getDividendTaxes,
+} from "../utils";
 
-import { TAXES } from "../constants";
-
-const taxYears = [
-  "2021/22",
-  "2022/23",
-  "2023/24",
-  "2024/25",
-  "2025/26",
-  "2026/27",
-];
+import { TAXES, TAX_YEARS, asTaxYear } from "../constants";
 
 const Home = () => {
   const [activeTab, setActiveTab] = useState<"outside" | "inside">("outside");
@@ -31,12 +34,12 @@ const Home = () => {
     dailyRate: "600.00",
     numberOfDirectors: "1",
     salaryDrawdown: `${convertToPounds(
-      TAXES[taxYears[0]].MAX_TAX_EFFICIENT_SALARY_PENCE,
+      TAXES[TAX_YEARS[0]].MAX_TAX_EFFICIENT_SALARY_PENCE,
     )}.00`,
     generalExpenses: "1200.00",
     pensionContributions: "0.00",
     dividendDrawdown: "0",
-    taxYear: taxYears[taxYears.length - 1],
+    taxYear: TAX_YEARS[TAX_YEARS.length - 1],
   });
 
   const {
@@ -67,7 +70,7 @@ const Home = () => {
     (_, i) => directorEVP11d[i] ?? "0",
   );
 
-  const taxes = TAXES[taxYear];
+  const taxes = TAXES[asTaxYear(taxYear)];
 
   const {
     TAX_FREE_PERSONAL_ALLOWANCE_PENCE,
@@ -123,7 +126,11 @@ const Home = () => {
   const effectivePersonalAllowancePence = Math.max(
     0,
     TAX_FREE_PERSONAL_ALLOWANCE_PENCE -
-      Math.max(0, totalIncomePence - MAXIMUM_FULL_PERSONAL_ALLOWANCE_THRESHOLD_PENCE) / 2,
+      Math.max(
+        0,
+        totalIncomePence - MAXIMUM_FULL_PERSONAL_ALLOWANCE_THRESHOLD_PENCE,
+      ) /
+        2,
   );
   const higherRateThreshold =
     TAX_FREE_PERSONAL_ALLOWANCE_PENCE + HIGHER_DIVIDEND_TAX_THRESHOLD_PENCE;
@@ -235,7 +242,7 @@ const Home = () => {
             name="taxYear"
             value={taxYear}
             onChange={handleChange}
-            options={taxYears.map((year) => ({
+            options={TAX_YEARS.map((year) => ({
               label: year,
               value: year,
             }))}
@@ -257,71 +264,79 @@ const Home = () => {
               </span>
             </div>
             <div className="px-4 pt-3 pb-4">
-            <div className="days-mode-toggle mb-3">
-              <label className={`days-mode-option${daysMode === "annual" ? " days-mode-option-active" : ""}`}>
-                <input
-                  type="radio"
-                  className="sr-only"
-                  checked={daysMode === "annual"}
-                  onChange={() => setDaysMode("annual")}
-                />
-                Annual days
-              </label>
-              <label className={`days-mode-option${daysMode === "weekly" ? " days-mode-option-active" : ""}`}>
-                <input
-                  type="radio"
-                  className="sr-only"
-                  checked={daysMode === "weekly"}
-                  onChange={() => setDaysMode("weekly")}
-                />
-                Weeks × days per week
-              </label>
-            </div>
-            {daysMode === "annual" ? (
-              <input
-                type="number"
-                step="any"
-                aria-label="Days worked annually"
-                name="numberOfDaysWorked"
-                value={numberOfDaysWorked}
-                onChange={handleChange}
-                className="border border-slate-300 rounded-lg w-full h-10 p-2 bg-white text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
-              />
-            ) : (
-              <div className="grid grid-cols-2 gap-3">
-                <label className="block">
-                  <div className="pb-1 text-xs text-slate-500">Weeks per year</div>
+              <div className="days-mode-toggle mb-3">
+                <label
+                  className={`days-mode-option${daysMode === "annual" ? " days-mode-option-active" : ""}`}
+                >
                   <input
-                    type="number"
-                    step="1"
-                    min={1}
-                    max={52}
-                    name="weeksPerYear"
-                    value={weeksPerYear}
-                    onChange={handleChange}
-                    className="border border-slate-300 rounded-lg w-full h-10 p-2 bg-white text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                    type="radio"
+                    className="sr-only"
+                    checked={daysMode === "annual"}
+                    onChange={() => setDaysMode("annual")}
                   />
+                  Annual days
                 </label>
-                <label className="block">
-                  <div className="pb-1 text-xs text-slate-500">Days per week</div>
+                <label
+                  className={`days-mode-option${daysMode === "weekly" ? " days-mode-option-active" : ""}`}
+                >
                   <input
-                    type="number"
-                    step="1"
-                    min={1}
-                    max={7}
-                    name="daysPerWeek"
-                    value={daysPerWeek}
-                    onChange={handleChange}
-                    className="border border-slate-300 rounded-lg w-full h-10 p-2 bg-white text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                    type="radio"
+                    className="sr-only"
+                    checked={daysMode === "weekly"}
+                    onChange={() => setDaysMode("weekly")}
                   />
+                  Weeks × days per week
                 </label>
               </div>
-            )}
-            {daysMode === "weekly" && (
-              <div className="mt-2 text-xs text-slate-500">
-                = {effectiveDaysWorked} days per year
-              </div>
-            )}
+              {daysMode === "annual" ? (
+                <input
+                  type="number"
+                  step="any"
+                  aria-label="Days worked annually"
+                  name="numberOfDaysWorked"
+                  value={numberOfDaysWorked}
+                  onChange={handleChange}
+                  className="border border-slate-300 rounded-lg w-full h-10 p-2 bg-white text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                />
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="block">
+                    <div className="pb-1 text-xs text-slate-500">
+                      Weeks per year
+                    </div>
+                    <input
+                      type="number"
+                      step="1"
+                      min={1}
+                      max={52}
+                      name="weeksPerYear"
+                      value={weeksPerYear}
+                      onChange={handleChange}
+                      className="border border-slate-300 rounded-lg w-full h-10 p-2 bg-white text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                    />
+                  </label>
+                  <label className="block">
+                    <div className="pb-1 text-xs text-slate-500">
+                      Days per week
+                    </div>
+                    <input
+                      type="number"
+                      step="1"
+                      min={1}
+                      max={7}
+                      name="daysPerWeek"
+                      value={daysPerWeek}
+                      onChange={handleChange}
+                      className="border border-slate-300 rounded-lg w-full h-10 p-2 bg-white text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                    />
+                  </label>
+                </div>
+              )}
+              {daysMode === "weekly" && (
+                <div className="mt-2 text-xs text-slate-500">
+                  = {effectiveDaysWorked} days per year
+                </div>
+              )}
             </div>
           </div>
           <TextInput
@@ -384,28 +399,28 @@ const Home = () => {
             />
           </ExpandableContent>
           <ExpandableContent title="EV company car">
-          {syncedEVP11d.map((p11d, i) => (
-            <TextInput
-              key={i}
-              label={
-                numDirs > 1
-                  ? `Director ${i + 1} EV P11D value (${EV_BIK_RATE_PERCENTAGE}% BiK rate for ${taxYear})`
-                  : `EV company car P11D value (${EV_BIK_RATE_PERCENTAGE}% BiK rate for ${taxYear})`
-              }
-              prepend="£"
-              step="0.01"
-              type="number"
-              min={0}
-              maxLength={10}
-              name={`evP11d_${i}`}
-              value={p11d}
-              onChange={(e) => {
-                const updated = [...syncedEVP11d];
-                updated[i] = e.currentTarget.value;
-                setDirectorEVP11d(updated);
-              }}
-            />
-          ))}
+            {syncedEVP11d.map((p11d, i) => (
+              <TextInput
+                key={i}
+                label={
+                  numDirs > 1
+                    ? `Director ${i + 1} EV P11D value (${EV_BIK_RATE_PERCENTAGE}% BiK rate for ${taxYear})`
+                    : `EV company car P11D value (${EV_BIK_RATE_PERCENTAGE}% BiK rate for ${taxYear})`
+                }
+                prepend="£"
+                step="0.01"
+                type="number"
+                min={0}
+                maxLength={10}
+                name={`evP11d_${i}`}
+                value={p11d}
+                onChange={(e) => {
+                  const updated = [...syncedEVP11d];
+                  updated[i] = e.currentTarget.value;
+                  setDirectorEVP11d(updated);
+                }}
+              />
+            ))}
           </ExpandableContent>
           <TextInput
             label={`Annual salary drawdown ${
@@ -510,10 +525,18 @@ const Home = () => {
             retainedProfits={retainedProfits - totalClass1aNI}
             totalTaxableIncome={totalTaxableIncome}
             TAX_FREE_PERSONAL_ALLOWANCE_PENCE={effectivePersonalAllowancePence}
-            DIVIDEND_TAX_FREE_ALLOWANCE_PENCE={DIVIDEND_TAX_FREE_ALLOWANCE_PENCE}
-            BASIC_DIVIDEND_TAX_RATE_PERCENTAGE={BASIC_DIVIDEND_TAX_RATE_PERCENTAGE}
-            HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE={HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE}
-            ADDITIONAL_DIVIDEND_TAX_RATE_PERCENTAGE={ADDITIONAL_DIVIDEND_TAX_RATE_PERCENTAGE}
+            DIVIDEND_TAX_FREE_ALLOWANCE_PENCE={
+              DIVIDEND_TAX_FREE_ALLOWANCE_PENCE
+            }
+            BASIC_DIVIDEND_TAX_RATE_PERCENTAGE={
+              BASIC_DIVIDEND_TAX_RATE_PERCENTAGE
+            }
+            HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE={
+              HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE
+            }
+            ADDITIONAL_DIVIDEND_TAX_RATE_PERCENTAGE={
+              ADDITIONAL_DIVIDEND_TAX_RATE_PERCENTAGE
+            }
             dividendTaxBreakdown={dividendTaxBreakdown}
             EV_BIK_RATE_PERCENTAGE={EV_BIK_RATE_PERCENTAGE}
             numDirs={numDirs}

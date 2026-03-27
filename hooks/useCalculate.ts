@@ -34,7 +34,7 @@ const getComplexCorporationTaxDue = (profit: number, taxes: Taxes) => {
   return taxDue;
 };
 
-const getCorportationTaxDue = ({
+const getCorporationTaxDue = ({
   totalRevenue,
   totalExpenses,
   totalSalaryDrawdown,
@@ -91,7 +91,7 @@ const compute = ({
   const totalDividendDrawdown = dividendDrawdown * numberOfDirectors;
   const totalRevenue = numberOfDaysWorked * dailyRate;
   const totalExpenses = generalExpenses + pensionContributions;
-  const corporationTaxDue = getCorportationTaxDue({
+  const corporationTaxDue = getCorporationTaxDue({
     totalRevenue,
     totalExpenses,
     totalSalaryDrawdown,
