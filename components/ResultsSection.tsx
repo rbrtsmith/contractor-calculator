@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { currencyFormat } from "../utils";
 
 interface DirectorBiK {
@@ -51,7 +52,8 @@ const StatCard = ({
   accent?: boolean;
   center?: boolean;
 }) => (
-  <div
+  <section
+    aria-label={label}
     className={`rounded-xl p-4 flex flex-col gap-1 ${center ? "items-center text-center" : ""} ${
       accent
         ? "bg-gradient-to-br from-green-400 to-blue-500 text-white"
@@ -79,7 +81,7 @@ const StatCard = ({
         {subtext}
       </span>
     )}
-  </div>
+  </section>
 );
 
 const SectionCard = ({
@@ -89,14 +91,14 @@ const SectionCard = ({
   title: string;
   children: React.ReactNode;
 }) => (
-  <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-3">
+  <section aria-label={title} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-3">
     <div className="px-4 py-2.5 border-b border-slate-200 bg-slate-100">
-      <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
         {title}
-      </span>
+      </h3>
     </div>
-    <div className="px-4 py-1">{children}</div>
-  </div>
+    <dl className="px-4 py-1">{children}</dl>
+  </section>
 );
 
 const Row = ({
@@ -109,18 +111,22 @@ const Row = ({
   value: string;
   bold?: boolean;
   muted?: boolean;
-}) => (
-  <div className="results-row flex justify-between items-center py-2.5 text-sm">
-    <span className={muted ? "text-slate-500" : "text-slate-700"}>{label}</span>
-    <span
-      className={`tabular-nums ${
-        bold ? "font-bold text-slate-900" : muted ? "text-slate-500" : "text-slate-800"
-      }`}
-    >
-      {value}
-    </span>
-  </div>
-);
+}) => {
+  const id = useId();
+  return (
+    <div className="results-row flex justify-between items-center py-2.5 text-sm">
+      <dt id={id} className={muted ? "text-slate-500" : "text-slate-700"}>{label}</dt>
+      <dd
+        aria-labelledby={id}
+        className={`tabular-nums ${
+          bold ? "font-bold text-slate-900" : muted ? "text-slate-500" : "text-slate-800"
+        }`}
+      >
+        {value}
+      </dd>
+    </div>
+  );
+};
 
 export const ResultsSection = ({
   totalRevenue,

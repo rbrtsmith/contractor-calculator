@@ -57,7 +57,7 @@ const Home = () => {
       ? String(Number(weeksPerYear) * Number(daysPerWeek))
       : numberOfDaysWorked;
 
-  const numDirs = Number(numberOfDirectors);
+  const numDirs = Math.max(1, Number(numberOfDirectors) || 1);
   const syncedLoanPlans = Array.from(
     { length: numDirs },
     (_, i) => directorLoanPlans[i] ?? "none",
@@ -281,6 +281,7 @@ const Home = () => {
               <input
                 type="number"
                 step="any"
+                aria-label="Days worked annually"
                 name="numberOfDaysWorked"
                 value={numberOfDaysWorked}
                 onChange={handleChange}
@@ -288,7 +289,7 @@ const Home = () => {
               />
             ) : (
               <div className="grid grid-cols-2 gap-3">
-                <div>
+                <label className="block">
                   <div className="pb-1 text-xs text-slate-500">Weeks per year</div>
                   <input
                     type="number"
@@ -300,8 +301,8 @@ const Home = () => {
                     onChange={handleChange}
                     className="border border-slate-300 rounded-lg w-full h-10 p-2 bg-white text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
                   />
-                </div>
-                <div>
+                </label>
+                <label className="block">
                   <div className="pb-1 text-xs text-slate-500">Days per week</div>
                   <input
                     type="number"
@@ -313,7 +314,7 @@ const Home = () => {
                     onChange={handleChange}
                     className="border border-slate-300 rounded-lg w-full h-10 p-2 bg-white text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
                   />
-                </div>
+                </label>
               </div>
             )}
             {daysMode === "weekly" && (
