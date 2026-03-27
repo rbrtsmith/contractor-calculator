@@ -1,19 +1,25 @@
 import { useState } from "react";
 
-type Values = {
-  [key: string]: string;
+type FormActions<T extends Record<string, string>> = {
+  handleChange: (
+    e: React.FormEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => void;
+  setValue: (name: keyof T, value: string) => void;
 };
 
-export const useForm = (
-  initialValues: Values
-): [
-  Values,
-  (e: React.FormEvent<HTMLInputElement | HTMLSelectElement>) => void
-] => {
+export const useForm = <T extends Record<string, string>>(
+  initialValues: T,
+): [T, FormActions<T>] => {
   const [values, setValues] = useState(initialValues);
   return [
     values,
-    (e) =>
-      setValues({ ...values, [e.currentTarget.name]: e.currentTarget.value }),
+    {
+      handleChange: (e) => {
+        const { name, value } = e.currentTarget;
+        setValues((prev) => ({ ...prev, [name]: value }));
+      },
+      setValue: (name, value) =>
+        setValues((prev) => ({ ...prev, [name]: value })),
+    },
   ];
 };

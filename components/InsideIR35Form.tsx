@@ -220,7 +220,7 @@ export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
   const [studentLoanPlan, setStudentLoanPlan] = useState("none");
   const [daysMode, setDaysMode] = useState<"annual" | "weekly">("annual");
 
-  const [values, handleChange] = useForm({
+  const [values, { handleChange }] = useForm({
     numberOfDaysWorked: "230",
     weeksPerYear: "46",
     daysPerWeek: "5",

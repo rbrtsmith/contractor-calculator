@@ -27,7 +27,7 @@ const Home = () => {
   const [directorEVP11d, setDirectorEVP11d] = useState<string[]>(["0"]);
   const [daysMode, setDaysMode] = useState<"annual" | "weekly">("annual");
 
-  const [values, handleChange] = useForm({
+  const [values, { handleChange, setValue }] = useForm({
     numberOfDaysWorked: "230",
     weeksPerYear: "46",
     daysPerWeek: "5",
@@ -436,15 +436,10 @@ const Home = () => {
                   Math.floor(Number(salaryDrawdown) * 100)
                 }
                 onClick={() => {
-                  const evt = {
-                    currentTarget: {
-                      name: "salaryDrawdown",
-                      value: convertToPounds(
-                        MAX_TAX_EFFICIENT_SALARY_PENCE,
-                      ).toFixed(2),
-                    },
-                  } as any as React.FormEvent<HTMLInputElement>;
-                  handleChange(evt);
+                  setValue(
+                    "salaryDrawdown",
+                    convertToPounds(MAX_TAX_EFFICIENT_SALARY_PENCE).toFixed(2),
+                  );
                 }}
               >
                 Max out
@@ -474,15 +469,10 @@ const Home = () => {
                     Math.floor(Number(dividendDrawdown) * 100)
                   }
                   onClick={() => {
-                    const evt = {
-                      currentTarget: {
-                        name: "dividendDrawdown",
-                        value: convertToPounds(
-                          maxTaxEfficientDividendPence,
-                        ).toFixed(2),
-                      },
-                    } as any as React.FormEvent<HTMLInputElement>;
-                    handleChange(evt);
+                    setValue(
+                      "dividendDrawdown",
+                      convertToPounds(maxTaxEfficientDividendPence).toFixed(2),
+                    );
                   }}
                 >
                   Efficient
@@ -493,15 +483,12 @@ const Home = () => {
                     Math.floor(Number(dividendDrawdown) * 100)
                   }
                   onClick={() => {
-                    const evt = {
-                      currentTarget: {
-                        name: "dividendDrawdown",
-                        value: convertToPounds(
-                          maximumAllowableDividendDrawdown,
-                        ).toFixed(2),
-                      },
-                    } as any as React.FormEvent<HTMLInputElement>;
-                    handleChange(evt);
+                    setValue(
+                      "dividendDrawdown",
+                      convertToPounds(maximumAllowableDividendDrawdown).toFixed(
+                        2,
+                      ),
+                    );
                   }}
                 >
                   All
