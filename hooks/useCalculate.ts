@@ -12,24 +12,25 @@ type Inputs = {
   taxes: Taxes;
 };
 
-const getComplexCorporationTaxDue = (profit: number, taxes: Taxes) => {
-  const UPPER_LIMIT = 250000;
-  const PROFIT_MULTIPLIER = 0.25;
-  const MARGINAL_RATE_MULTIPLIER = 3 / 200;
+const CORPORATION_TAX_UPPER_LIMIT_POUNDS = 250000;
+const CORPORATION_TAX_SMALL_PROFITS_LIMIT_POUNDS = 50000;
+const CORPORATION_TAX_SMALL_PROFITS_RATE = 0.19;
+const COMPLEX_CORP_TAX_PROFIT_MULTIPLIER = 0.25;
+const COMPLEX_CORP_TAX_MARGINAL_RELIEF_MULTIPLIER = 3 / 200;
 
-  if (profit >= 250000) {
+const getComplexCorporationTaxDue = (profit: number, taxes: Taxes) => {
+  if (profit >= CORPORATION_TAX_UPPER_LIMIT_POUNDS) {
     return profit * (taxes.CORPORATION_TAX_PERCENTAGE / 100);
   }
 
-  if (profit <= 50000) return profit * 0.19;
+  if (profit <= CORPORATION_TAX_SMALL_PROFITS_LIMIT_POUNDS)
+    return profit * CORPORATION_TAX_SMALL_PROFITS_RATE;
 
-  // step 1
-  const profitPlus25Percent = profit * PROFIT_MULTIPLIER;
+  const profitPlus25Percent = profit * COMPLEX_CORP_TAX_PROFIT_MULTIPLIER;
+  const marginalReleif =
+    (CORPORATION_TAX_UPPER_LIMIT_POUNDS - profit) *
+    COMPLEX_CORP_TAX_MARGINAL_RELIEF_MULTIPLIER;
 
-  // step 3
-  const marginalReleif = (UPPER_LIMIT - profit) * MARGINAL_RATE_MULTIPLIER;
-
-  // step 4
   const taxDue = profitPlus25Percent - marginalReleif;
   return taxDue;
 };

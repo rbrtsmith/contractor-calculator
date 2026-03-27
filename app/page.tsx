@@ -15,9 +15,14 @@ import {
   convertToPounds,
   convertToPence,
   getDividendTaxes,
+  getStudentLoanRepayment,
 } from "../utils";
 
 import { TAXES, TAX_YEARS, asTaxYear } from "../constants";
+
+const INCOME_TAX_BASIC_RATE = 0.2;
+const INCOME_TAX_HIGHER_RATE = 0.4;
+const INCOME_TAX_ADDITIONAL_RATE = 0.45;
 
 const Home = () => {
   const [activeTab, setActiveTab] = useState<"outside" | "inside">("outside");
@@ -108,17 +113,13 @@ const Home = () => {
   const incomePerDirectorPence =
     convertToPence(salaryDrawdown) + convertToPence(dividendDrawdown);
 
-  const getStudentLoanRepayment = (plan: string): number => {
-    if (plan === "none") return 0;
-    const threshold =
-      plan === "plan1"
-        ? taxes.STUDENT_LOAN_PLAN1_THRESHOLD_PENCE
-        : taxes.STUDENT_LOAN_PLAN2_THRESHOLD_PENCE;
-    const above = incomePerDirectorPence - threshold;
-    return above > 0 ? above * 0.09 : 0;
-  };
-
-  const studentLoanRepayments = syncedLoanPlans.map(getStudentLoanRepayment);
+  const studentLoanRepayments = syncedLoanPlans.map((plan) =>
+    getStudentLoanRepayment({
+      plan,
+      incomePence: incomePerDirectorPence,
+      taxes,
+    }),
+  );
   const anyStudentLoan = studentLoanRepayments.some((r) => r > 0);
 
   const totalIncomePence =
@@ -161,7 +162,9 @@ const Home = () => {
     );
 
     const incomeTaxOnBik =
-      bikInBasic * 0.2 + bikInHigher * 0.4 + bikInAdditional * 0.45;
+      bikInBasic * INCOME_TAX_BASIC_RATE +
+      bikInHigher * INCOME_TAX_HIGHER_RATE +
+      bikInAdditional * INCOME_TAX_ADDITIONAL_RATE;
 
     return {
       p11dPence,

@@ -3,13 +3,17 @@ import { useForm } from "../hooks";
 import { TextInput } from "./TextInput";
 import { SelectInput } from "./SelectInput";
 import { ExpandableContent } from "./ExpandableContent";
-import { currencyFormat, convertToPence } from "../utils";
+import {
+  currencyFormat,
+  convertToPence,
+  getStudentLoanRepayment,
+} from "../utils";
 import { TAXES, TAX_YEARS, Taxes, asTaxYear } from "../constants";
 
 const INCOME_TAX_BASIC_RATE = 0.2;
 const INCOME_TAX_HIGHER_RATE = 0.4;
 const INCOME_TAX_ADDITIONAL_RATE = 0.45;
-const STUDENT_LOAN_RATE = 0.09;
+const EMPLOYEE_NI_SECONDARY_RATE = 0.02;
 
 const loanPlanOptions = [
   { label: "None", value: "none" },
@@ -101,7 +105,7 @@ const computeInsideIR35 = ({
   );
   const employeeNI =
     Math.max(0, employeeNIBasic) * employeeNIBasicRate +
-    Math.max(0, employeeNIHigher) * 0.02;
+    Math.max(0, employeeNIHigher) * EMPLOYEE_NI_SECONDARY_RATE;
 
   return {
     grossContractValue,
@@ -254,15 +258,11 @@ export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
     taxes,
   });
 
-  const studentLoanRepayment = (() => {
-    if (studentLoanPlan === "none") return 0;
-    const threshold =
-      studentLoanPlan === "plan1"
-        ? taxes.STUDENT_LOAN_PLAN1_THRESHOLD_PENCE
-        : taxes.STUDENT_LOAN_PLAN2_THRESHOLD_PENCE;
-    const above = result.grossSalary - threshold;
-    return above > 0 ? above * STUDENT_LOAN_RATE : 0;
-  })();
+  const studentLoanRepayment = getStudentLoanRepayment({
+    plan: studentLoanPlan,
+    incomePence: result.grossSalary,
+    taxes,
+  });
 
   const netPayAfterStudentLoan = result.netPay - studentLoanRepayment;
 
