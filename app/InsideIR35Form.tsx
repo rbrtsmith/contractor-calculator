@@ -1,8 +1,13 @@
-import { useId, useState } from "react";
+import { useState } from "react";
 import { useForm } from "../hooks";
-import { TextInput } from "./TextInput";
-import { SelectInput } from "./SelectInput";
-import { ExpandableContent } from "./ExpandableContent";
+import {
+  TextInput,
+  SelectInput,
+  ExpandableContent,
+  StatCard,
+  SectionCard,
+  Row,
+} from "../components";
 import {
   currencyFormat,
   convertToPence,
@@ -16,104 +21,6 @@ const loanPlanOptions = [
   { label: "Plan 1", value: "plan1" },
   { label: "Plan 2", value: "plan2" },
 ];
-
-const StatCard = ({
-  label,
-  value,
-  subtext,
-  accent = false,
-  center = false,
-}: {
-  label: string;
-  value: string;
-  subtext?: string;
-  accent?: boolean;
-  center?: boolean;
-}) => (
-  <section
-    aria-label={label}
-    className={`rounded-xl p-4 flex flex-col gap-1 ${center ? "items-center text-center" : ""} ${
-      accent
-        ? "bg-gradient-to-br from-green-400 to-blue-500 text-white"
-        : "bg-white border border-slate-200 shadow-sm"
-    }`}
-  >
-    <span
-      className={`text-xs font-semibold uppercase tracking-wider ${
-        accent ? "text-white/70" : "text-slate-500"
-      }`}
-    >
-      {label}
-    </span>
-    <span
-      className={`text-2xl font-bold leading-tight ${
-        accent ? "text-white" : "text-slate-900"
-      }`}
-    >
-      {value}
-    </span>
-    {subtext && (
-      <span
-        className={`text-sm mt-0.5 ${accent ? "text-white/80" : "text-slate-600"}`}
-      >
-        {subtext}
-      </span>
-    )}
-  </section>
-);
-
-const SectionCard = ({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) => (
-  <section
-    aria-label={title}
-    className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-3"
-  >
-    <div className="px-4 py-2.5 border-b border-slate-200 bg-slate-100">
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-        {title}
-      </h3>
-    </div>
-    <dl className="px-4 py-1">{children}</dl>
-  </section>
-);
-
-const Row = ({
-  label,
-  value,
-  bold = false,
-  muted = false,
-}: {
-  label: string;
-  value: string;
-  bold?: boolean;
-  muted?: boolean;
-}) => {
-  const id = useId();
-  return (
-    <div className="results-row flex justify-between items-center py-2.5 text-sm">
-      <dt id={id} className={muted ? "text-slate-500" : "text-slate-700"}>
-        {label}
-      </dt>
-      <dd
-        aria-labelledby={id}
-        className={`tabular-nums ${
-          bold
-            ? "font-bold text-slate-900"
-            : muted
-              ? "text-slate-500"
-              : "text-slate-800"
-        }`}
-      >
-        {value}
-      </dd>
-    </div>
-  );
-};
 
 export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
   const [studentLoanPlan, setStudentLoanPlan] = useState("none");
