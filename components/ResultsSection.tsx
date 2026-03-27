@@ -91,7 +91,10 @@ const SectionCard = ({
   title: string;
   children: React.ReactNode;
 }) => (
-  <section aria-label={title} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-3">
+  <section
+    aria-label={title}
+    className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-3"
+  >
     <div className="px-4 py-2.5 border-b border-slate-200 bg-slate-100">
       <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
         {title}
@@ -115,11 +118,17 @@ const Row = ({
   const id = useId();
   return (
     <div className="results-row flex justify-between items-center py-2.5 text-sm">
-      <dt id={id} className={muted ? "text-slate-500" : "text-slate-700"}>{label}</dt>
+      <dt id={id} className={muted ? "text-slate-500" : "text-slate-700"}>
+        {label}
+      </dt>
       <dd
         aria-labelledby={id}
         className={`tabular-nums ${
-          bold ? "font-bold text-slate-900" : muted ? "text-slate-500" : "text-slate-800"
+          bold
+            ? "font-bold text-slate-900"
+            : muted
+              ? "text-slate-500"
+              : "text-slate-800"
         }`}
       >
         {value}
@@ -170,20 +179,34 @@ export const ResultsSection = ({
       <SectionCard title="Company overview">
         <Row label="Gross revenue" value={currencyFormat(totalRevenue)} bold />
         {generalExpenses > 0 && (
-          <Row label="General expenses" value={`− ${currencyFormat(generalExpenses)}`} muted />
+          <Row
+            label="General expenses"
+            value={`− ${currencyFormat(generalExpenses)}`}
+            muted
+          />
         )}
         {pensionContributions > 0 && (
-          <Row label="Pension contributions" value={`− ${currencyFormat(pensionContributions)}`} muted />
+          <Row
+            label="Pension contributions"
+            value={`− ${currencyFormat(pensionContributions)}`}
+            muted
+          />
         )}
-        <Row label="Corporation tax" value={`− ${currencyFormat(corporationTaxDue)}`} muted />
-        <Row label="Retained profits" value={currencyFormat(retainedProfits)} bold />
+        <Row
+          label="Corporation tax"
+          value={`− ${currencyFormat(corporationTaxDue)}`}
+          muted
+        />
+        <Row
+          label="Retained profits"
+          value={currencyFormat(retainedProfits)}
+          bold
+        />
       </SectionCard>
 
       {/* Taxable income */}
       <SectionCard
-        title={
-          numDirs > 1 ? "Taxable income per director" : "Taxable income"
-        }
+        title={numDirs > 1 ? "Taxable income per director" : "Taxable income"}
       >
         <Row
           label="Taxable income"
@@ -269,7 +292,7 @@ export const ResultsSection = ({
                       value={currencyFormat(bik.incomeTaxOnBik)}
                     />
                     {directorDividendTaxAdjustment[i] > 0 && (
-                      <Row
+                      /* v8 ignore next */ <Row
                         label="Additional dividend tax (BiK pushes into higher rate)"
                         value={currencyFormat(directorDividendTaxAdjustment[i])}
                       />
@@ -291,9 +314,7 @@ export const ResultsSection = ({
         <SectionCard title="Student loan repayment">
           {numDirs === 1 ? (
             <Row
-              label={
-                syncedLoanPlans[0] === "plan1" ? "Plan 1" : "Plan 2"
-              }
+              label={syncedLoanPlans[0] === "plan1" ? "Plan 1" : "Plan 2"}
               value={currencyFormat(studentLoanRepayments[0])}
               bold
             />

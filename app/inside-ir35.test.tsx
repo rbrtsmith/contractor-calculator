@@ -306,6 +306,54 @@ test("inside IR35: student loan Plan 1 deducted from net pay — 180 days at £4
   ).toBeInTheDocument();
 });
 
+// I-1: Weekly mode — 46 weeks × 5 days = 230 days × £250/day = £57,500 gross.
+// Gross salary £50,663.04 — calculation must match what annual 230 days produces.
+test("inside IR35: weekly days mode — 46 weeks × 5 days at £250/day matches annual 230-day calculation in 2026/27", async () => {
+  const user = userEvent.setup();
+  render(<Home />);
+  await user.click(screen.getByRole("button", { name: /inside ir35/i }));
+  await user.selectOptions(
+    screen.getByRole("combobox", { name: /tax year/i }),
+    "2026/27",
+  );
+
+  // Switch to weekly mode
+  await user.click(
+    screen.getByRole("radio", { name: /weeks × days per week/i }),
+  );
+
+  const weeksInput = screen.getByRole("spinbutton", {
+    name: /weeks per year/i,
+  });
+  await user.clear(weeksInput);
+  await user.type(weeksInput, "46");
+
+  const dpwInput = screen.getByRole("spinbutton", { name: /days per week/i });
+  await user.clear(dpwInput);
+  await user.type(dpwInput, "5");
+
+  const rateInput = screen.getByRole("spinbutton", { name: /daily rate/i });
+  await user.clear(rateInput);
+  await user.type(rateInput, "250");
+
+  await user.click(screen.getByRole("button", { name: /expenses/i }));
+  const expensesInput = screen.getByRole("spinbutton", {
+    name: /annual allowable expenses/i,
+  });
+  await user.clear(expensesInput);
+  await user.type(expensesInput, "0");
+
+  // 46 × 5 = 230 days × £250 = £57,500 gross contract value
+  expect(
+    screen.getByRole("definition", { name: /gross contract value/i }),
+  ).toHaveTextContent("£57,500.00");
+
+  // Gross salary after employer NI deduction (same as 230-day annual path)
+  expect(
+    screen.getByRole("definition", { name: /gross paye salary/i }),
+  ).toHaveTextContent("£50,652.17");
+});
+
 // 180 days × £450 = £81,000 gross. Gross salary £71,086.96, Plan 2 threshold £27,295, repayment 9% of excess.
 test("inside IR35: student loan Plan 2 deducted from net pay — 180 days at £450/day in 2026/27", async () => {
   const user = userEvent.setup();
@@ -324,5 +372,47 @@ test("inside IR35: student loan Plan 2 deducted from net pay — 180 days at £4
     within(
       screen.getByRole("region", { name: /net take-home pay/i }),
     ).getByText("£47,846.56"),
+  ).toBeInTheDocument();
+});
+
+// I-2: Tab switch from Inside IR35 back to Outside IR35 — Inside form hides, Outside form appears.
+// Covers page.tsx setActiveTab("outside") onClick.
+test("inside IR35: switching back to Outside IR35 tab hides the inside form", async () => {
+  const user = userEvent.setup();
+  render(<Home />);
+
+  // Navigate to Inside IR35
+  await user.click(screen.getByRole("button", { name: /inside ir35/i }));
+
+  // Switch back to Outside IR35
+  await user.click(screen.getByRole("button", { name: /outside ir35/i }));
+
+  // Outside IR35 form fields are visible again
+  expect(
+    screen.getByRole("spinbutton", { name: /days worked annually/i }),
+  ).toBeVisible();
+});
+
+// I-3: Switching back from weekly to annual inside IR35 form — annual days input reappears.
+// Covers InsideIR35Form.tsx setDaysMode("annual") onChange.
+test("inside IR35: days mode toggle — switch to weekly then back to annual restores direct days input", async () => {
+  const user = userEvent.setup();
+  render(<Home />);
+  await user.click(screen.getByRole("button", { name: /inside ir35/i }));
+
+  // Switch to weekly mode
+  await user.click(
+    screen.getByRole("radio", { name: /weeks × days per week/i }),
+  );
+
+  expect(
+    screen.queryByRole("spinbutton", { name: /days worked annually/i }),
+  ).not.toBeInTheDocument();
+
+  // Switch back to annual mode
+  await user.click(screen.getByRole("radio", { name: /annual days/i }));
+
+  expect(
+    screen.getByRole("spinbutton", { name: /days worked annually/i }),
   ).toBeInTheDocument();
 });

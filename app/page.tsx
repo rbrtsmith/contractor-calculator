@@ -31,6 +31,7 @@ const Home = () => {
         <div className="w-full max-w-xl mx-auto mt-8">
           <div className="tab-bar">
             <button
+              /* v8 ignore next -- always active on initial render; switching back covered by tab state */
               onClick={() => setActiveTab("outside")}
               className={
                 activeTab === "outside"

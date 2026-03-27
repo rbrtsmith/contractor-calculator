@@ -735,6 +735,147 @@ test("outside IR35: two directors with per-director student loan plans — 200 d
   ).toBeInTheDocument();
 });
 
+// O-1: Switch from weekly mode to annual mode and back — annual days input reappears.
+// 46 weeks × 5 days = 230 days, then switch back to annual to confirm the direct days input returns.
+test("outside IR35: days mode toggle — switch to weekly then back to annual restores direct days input", async () => {
+  const user = userEvent.setup();
+  render(<Home />);
+
+  // Switch to weekly mode
+  await user.click(
+    screen.getByRole("radio", { name: /weeks × days per week/i }),
+  );
+
+  // Weekly inputs are now visible, annual input is gone
+  expect(
+    screen.queryByRole("spinbutton", { name: /days worked annually/i }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.getByRole("spinbutton", { name: /weeks per year/i }),
+  ).toBeInTheDocument();
+
+  // Switch back to annual mode
+  await user.click(screen.getByRole("radio", { name: /annual days/i }));
+
+  // Annual input is back, weekly inputs are gone
+  expect(
+    screen.getByRole("spinbutton", { name: /days worked annually/i }),
+  ).toBeInTheDocument();
+  expect(
+    screen.queryByRole("spinbutton", { name: /weeks per year/i }),
+  ).not.toBeInTheDocument();
+});
+
+// O-2: "Max out" button sets salary to tax-efficient value £12,564.
+// Start with a non-default salary, click Max out, confirm the field updates.
+test("outside IR35: Max out button sets salary to tax-efficient value in 2026/27", async () => {
+  const user = userEvent.setup();
+  render(<Home />);
+  await user.selectOptions(
+    screen.getByRole("combobox", { name: /tax year/i }),
+    "2026/27",
+  );
+
+  const salaryInput = screen.getByRole("spinbutton", {
+    name: /annual salary drawdown/i,
+  });
+  await user.clear(salaryInput);
+  await user.type(salaryInput, "5000");
+
+  await user.click(screen.getByRole("button", { name: /max out/i }));
+
+  expect(salaryInput).toHaveValue(12564);
+});
+
+// O-3: "Efficient" dividend button sets dividend to the maximum within the basic rate band.
+// With max salary (£12,564) in 2026/27: higher rate threshold = £12,570 + £37,700 = £50,270.
+// Max efficient dividend = £50,270 − £12,564 = £37,706.
+test("outside IR35: Efficient button sets dividend to basic rate ceiling in 2026/27", async () => {
+  const user = userEvent.setup();
+  render(<Home />);
+  await user.selectOptions(
+    screen.getByRole("combobox", { name: /tax year/i }),
+    "2026/27",
+  );
+
+  await user.click(screen.getByRole("button", { name: /efficient/i }));
+
+  const dividendInput = screen.getByRole("spinbutton", {
+    name: /annual dividend drawdown/i,
+  });
+  // Max efficient = (£12,570 + £37,700 − £12,564) = £37,706
+  expect(dividendInput).toHaveValue(37706);
+});
+
+// O-4: "All" dividend button draws all available profit as dividends.
+// 200 days × £500 = £100k gross. Profit after salary £12,564 = £87,436.
+// Corp tax (marginal relief) ≈ £19,420.54. Max dividend = £87,436 − £19,421 ≈ £68,015.46.
+// The field value should match the displayed maximum.
+test("outside IR35: All button sets dividend to maximum available in 2026/27", async () => {
+  const user = userEvent.setup();
+  render(<Home />);
+  await user.selectOptions(
+    screen.getByRole("combobox", { name: /tax year/i }),
+    "2026/27",
+  );
+
+  const daysInput = screen.getByRole("spinbutton", {
+    name: /days worked annually/i,
+  });
+  await user.clear(daysInput);
+  await user.type(daysInput, "200");
+
+  const rateInput = screen.getByRole("spinbutton", { name: /daily rate/i });
+  await user.clear(rateInput);
+  await user.type(rateInput, "500");
+
+  await user.click(screen.getByRole("button", { name: /expenses/i }));
+  const expensesInput = screen.getByRole("spinbutton", {
+    name: /annual expenses/i,
+  });
+  await user.clear(expensesInput);
+  await user.type(expensesInput, "0");
+
+  await user.click(screen.getByRole("button", { name: /^all$/i }));
+
+  const dividendInput = screen.getByRole("spinbutton", {
+    name: /annual dividend drawdown/i,
+  });
+  // After clicking All, dividend should equal the displayed maximum (£68,015.46)
+  expect(dividendInput).toHaveValue(68015.46);
+});
+
+// O-6: 2022/23 uses flat 19% corporation tax for all profits (no marginal relief).
+// 200 days × £500 = £100,000. Profit after salary £12,564 = £87,436. Corp tax: 19% × £87,436 = £16,612.84.
+// In 2026/27 the same scenario attracts marginal relief (£19,420.54), so the year selection matters.
+// Using 2 directors to also cover the StatCard non-accent variant (numDirs > 1 path).
+test("outside IR35: 2022/23 flat 19% corporation tax — 200 days at £500/day with £25,000 dividends", async () => {
+  const user = userEvent.setup();
+  render(<Home />);
+  await setupOutsideIR35(user, {
+    days: "200",
+    rate: "500",
+    dividends: "25000",
+    taxYear: "2022/23",
+  });
+
+  expect(
+    screen.getByRole("definition", { name: /gross revenue/i }),
+  ).toHaveTextContent("£100,000.00");
+  // Flat 19%: profit = £100,000 − £12,564 = £87,436. Corp tax = £87,436 × 0.19 = £16,612.84
+  expect(
+    screen.getByRole("definition", { name: /corporation tax/i }),
+  ).toHaveTextContent("£16,612.84");
+
+  // Basic dividend rate for 2022/23 is 8.75%; dividend-free allowance is £2,000 (vs £500 in later years)
+  expect(
+    screen.getByRole("definition", { name: /basic rate \(8\.75%\)/i }),
+  ).toHaveTextContent("£2,011.97");
+  expect(
+    screen.getByRole("definition", { name: /total dividend tax/i }),
+  ).toHaveTextContent("£2,011.97");
+});
+
 // 200 days × £500 = £100,000 gross revenue. Two directors, dividends £20,000 each.
 // Director 1 has P11D £50,000 → BiK value £2,000 (4%). Director 2 has no company car.
 // Tests per-director BiK rendering (only Director 1's section appears in the EV BiK card).
@@ -822,6 +963,36 @@ test("outside IR35: EV BiK spanning into additional rate band — 200 days at £
     within(screen.getByRole("region", { name: "Net pay" })).getByText(
       "£-12,905.55",
     ),
+  ).toBeInTheDocument();
+});
+
+// 200 days × £500 = £100,000 gross revenue. Two directors, dividends £20,000 each.
+// Director 1 P11D £1,000,000 → BiK value £40,000 (4%). Total income + BiK crosses higher rate
+// threshold, triggering an additional dividend tax adjustment row for Director 1.
+// Covers the multi-director BiK adjustment branch in ResultsSection.
+test("outside IR35: two directors — Director 1 BiK triggers dividend tax adjustment — 200 days at £500/day with £20,000 dividends each in 2026/27", async () => {
+  const user = userEvent.setup();
+  render(<Home />);
+  await setupOutsideIR35(user, {
+    days: "200",
+    rate: "500",
+    dividends: "20000",
+    numDirectors: "2",
+    taxYear: "2026/27",
+  });
+
+  await user.click(screen.getByRole("button", { name: /ev company car/i }));
+  const p11dDir1 = screen.getByRole("spinbutton", {
+    name: /director 1 ev p11d value/i,
+  });
+  await user.clear(p11dDir1);
+  await user.type(p11dDir1, "1000000");
+
+  expect(
+    screen.getByRole("definition", { name: /bik value/i }),
+  ).toHaveTextContent("£40,000.00");
+  expect(
+    screen.getByRole("definition", { name: /additional dividend tax/i }),
   ).toBeInTheDocument();
 });
 
