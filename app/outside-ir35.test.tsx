@@ -996,6 +996,37 @@ test("outside IR35: two directors — Director 1 BiK triggers dividend tax adjus
   ).toBeInTheDocument();
 });
 
+// 100 days × £500 = £50,000 gross revenue. WFH allowance = £6 × 52 weeks = £312 (1 director).
+// Profit = £50,000 − £12,564 − £312 = £37,124. Corp tax at flat 19% = £7,053.56
+// (below £50k small profits threshold). Without WFH corp tax = £7,112.84.
+// Net pay = salary + dividends − dividend tax + WFH allowance = £35,242.89.
+test("outside IR35: WFH allowance checkbox adds £312 expenses, reduces corporation tax, and increases net pay — 100 days at £500/day in 2026/27", async () => {
+  const user = userEvent.setup();
+  render(<Home />);
+  await setupOutsideIR35(user, {
+    days: "100",
+    rate: "500",
+    dividends: "25000",
+    taxYear: "2026/27",
+  });
+
+  await user.click(
+    screen.getByRole("checkbox", { name: /work from home allowance/i }),
+  );
+
+  expect(
+    screen.getByRole("definition", { name: /general expenses/i }),
+  ).toHaveTextContent("£312.00");
+  expect(
+    screen.getByRole("definition", { name: /corporation tax/i }),
+  ).toHaveTextContent("£7,053.56");
+  expect(
+    within(screen.getByRole("region", { name: "Net pay" })).getByText(
+      "£35,242.89",
+    ),
+  ).toBeInTheDocument();
+});
+
 // 100 days × £500 = £50,000 gross revenue. Salary £12,564, no dividends drawn.
 // Only income is salary — dividend tax section shows £0.00, net pay equals salary alone.
 test("outside IR35: no dividend drawdown — 100 days at £500/day with £0 dividends in 2026/27", async () => {

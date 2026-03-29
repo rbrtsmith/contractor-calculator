@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm, useCalculate } from "../hooks";
+import { useForm } from "../hooks";
 import {
   TextInput,
   SelectInput,
@@ -13,14 +13,9 @@ import {
   currencyFormat,
   convertToPounds,
   convertToPence,
-  getDividendTaxes,
-  getStudentLoanRepayment,
+  computeOutsideIR35,
 } from "../utils";
 import { TAXES, TAX_YEARS, asTaxYear } from "../constants";
-
-const INCOME_TAX_BASIC_RATE = 0.2;
-const INCOME_TAX_HIGHER_RATE = 0.4;
-const INCOME_TAX_ADDITIONAL_RATE = 0.45;
 
 export const OutsideIR35Form = ({ hidden }: { hidden: boolean }) => {
   const [directorLoanPlans, setDirectorLoanPlans] = useState<string[]>([
@@ -28,6 +23,7 @@ export const OutsideIR35Form = ({ hidden }: { hidden: boolean }) => {
   ]);
   const [directorEVP11d, setDirectorEVP11d] = useState<string[]>(["0"]);
   const [daysMode, setDaysMode] = useState<"annual" | "weekly">("annual");
+  const [wfhAllowance, setWfhAllowance] = useState(false);
 
   const [values, { handleChange, setValue }] = useForm({
     numberOfDaysWorked: "230",
@@ -73,18 +69,15 @@ export const OutsideIR35Form = ({ hidden }: { hidden: boolean }) => {
   );
 
   const taxes = TAXES[asTaxYear(taxYear)];
+  const totalGeneralExpensesPence =
+    convertToPence(generalExpenses) + (wfhAllowance ? 31200 * numDirs : 0);
 
   const {
-    TAX_FREE_PERSONAL_ALLOWANCE_PENCE,
-    MAXIMUM_FULL_PERSONAL_ALLOWANCE_THRESHOLD_PENCE,
     MAX_TAX_EFFICIENT_SALARY_PENCE,
     BASIC_DIVIDEND_TAX_RATE_PERCENTAGE,
     HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE,
     ADDITIONAL_DIVIDEND_TAX_RATE_PERCENTAGE,
     DIVIDEND_TAX_FREE_ALLOWANCE_PENCE,
-    HIGHER_DIVIDEND_TAX_THRESHOLD_PENCE,
-    ADDITIONAL_DIVIDEND_TAX_THRESHOLD_PENCE,
-    EMPLOYER_NI_RATE_PERCENTAGE,
     EV_BIK_RATE_PERCENTAGE,
   } = taxes;
 
@@ -96,96 +89,30 @@ export const OutsideIR35Form = ({ hidden }: { hidden: boolean }) => {
     dividendTaxBreakdown,
     retainedProfits,
     totalAfterTaxPay,
-  } = useCalculate({
-    numberOfDaysWorked: effectiveDaysWorked,
-    dailyRate,
-    salaryDrawdown,
-    numberOfDirectors,
-    generalExpenses,
-    pensionContributions,
-    dividendDrawdown,
+    studentLoanRepayments,
+    anyStudentLoan,
+    effectivePersonalAllowancePence,
+    maxTaxEfficientDividendPence,
+    directorBiK,
+    anyBiK,
+    totalClass1aNI,
+    directorDividendTaxAdjustment,
+  } = computeOutsideIR35({
+    numberOfDaysWorked: Number(effectiveDaysWorked),
+    dailyRate: convertToPence(dailyRate),
+    salaryDrawdown: convertToPence(salaryDrawdown),
+    numberOfDirectors: numDirs,
+    generalExpenses: totalGeneralExpensesPence,
+    pensionContributions: convertToPence(pensionContributions),
+    dividendDrawdown: convertToPence(dividendDrawdown),
+    directorEVP11dPence: syncedEVP11d.map((p11d) => convertToPence(p11d)),
+    directorLoanPlans: syncedLoanPlans,
     taxes,
   });
 
-  const incomePerDirectorPence =
-    convertToPence(salaryDrawdown) + convertToPence(dividendDrawdown);
-
-  const studentLoanRepayments = syncedLoanPlans.map((plan) =>
-    getStudentLoanRepayment({
-      plan,
-      incomePence: incomePerDirectorPence,
-      taxes,
-    }),
-  );
-  const anyStudentLoan = studentLoanRepayments.some((r) => r > 0);
-
-  const totalIncomePence =
-    convertToPence(salaryDrawdown) + convertToPence(dividendDrawdown);
-  const effectivePersonalAllowancePence = Math.max(
-    0,
-    TAX_FREE_PERSONAL_ALLOWANCE_PENCE -
-      Math.max(
-        0,
-        totalIncomePence - MAXIMUM_FULL_PERSONAL_ALLOWANCE_THRESHOLD_PENCE,
-      ) /
-        2,
-  );
-  const higherRateThreshold =
-    TAX_FREE_PERSONAL_ALLOWANCE_PENCE + HIGHER_DIVIDEND_TAX_THRESHOLD_PENCE;
-  const maxTaxEfficientDividendPence = Math.min(
-    Math.max(0, higherRateThreshold - convertToPence(salaryDrawdown)),
-    maximumAllowableDividendDrawdown,
-  );
-  const directorBiK = syncedEVP11d.map((p11d) => {
-    const p11dPence = convertToPence(p11d);
-    const bikValue = p11dPence * (EV_BIK_RATE_PERCENTAGE / 100);
-
-    const bikStart = convertToPence(salaryDrawdown);
-    const bikEnd = convertToPence(salaryDrawdown) + bikValue;
-
-    const bikInBasic = Math.max(
-      0,
-      Math.min(bikEnd, higherRateThreshold) -
-        Math.max(bikStart, TAX_FREE_PERSONAL_ALLOWANCE_PENCE),
-    );
-    const bikInHigher = Math.max(
-      0,
-      Math.min(bikEnd, ADDITIONAL_DIVIDEND_TAX_THRESHOLD_PENCE) -
-        Math.max(bikStart, higherRateThreshold),
-    );
-    const bikInAdditional = Math.max(
-      0,
-      bikEnd - Math.max(bikStart, ADDITIONAL_DIVIDEND_TAX_THRESHOLD_PENCE),
-    );
-
-    const incomeTaxOnBik =
-      bikInBasic * INCOME_TAX_BASIC_RATE +
-      bikInHigher * INCOME_TAX_HIGHER_RATE +
-      bikInAdditional * INCOME_TAX_ADDITIONAL_RATE;
-
-    return {
-      p11dPence,
-      bikValue,
-      incomeTaxOnBik,
-      class1aNI: bikValue * (EMPLOYER_NI_RATE_PERCENTAGE / 100),
-    };
-  });
-  const anyBiK = directorBiK.some((b) => b.p11dPence > 0);
-  const totalClass1aNI = directorBiK.reduce((sum, b) => sum + b.class1aNI, 0);
-
-  // Per-director extra dividend tax caused by BiK pushing dividends into a higher band.
-  // Only applies when total income + BiK crosses the higher rate threshold.
-  const directorDividendTaxAdjustment = directorBiK.map((bik) => {
-    if (bik.bikValue === 0) return 0;
-    if (totalIncomePence + bik.bikValue <= higherRateThreshold) return 0;
-    const withBiK = getDividendTaxes({
-      dividendDrawdown: convertToPence(dividendDrawdown),
-      salaryDrawdown: convertToPence(salaryDrawdown),
-      additionalEmploymentIncome: bik.bikValue,
-      taxes,
-    });
-    return Math.max(0, withBiK.total - dividendTaxBreakdown.total);
-  });
+  const wfhAllowancePencePerDirector = wfhAllowance ? 31200 : 0;
+  const adjustedTotalAfterTaxPay =
+    totalAfterTaxPay + wfhAllowancePencePerDirector * numDirs;
 
   return (
     <div
@@ -350,6 +277,19 @@ export const OutsideIR35Form = ({ hidden }: { hidden: boolean }) => {
           value={pensionContributions}
           onChange={handleChange}
         />
+        <label className="mb-2 flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={wfhAllowance}
+            onChange={(e) => setWfhAllowance(e.currentTarget.checked)}
+            aria-label="Work from home allowance (£6/week × 52 weeks = £312/year)"
+            className="w-4 h-4 accent-blue-500"
+          />
+          <span className="text-sm font-medium text-slate-700">
+            Work from home allowance (£6/week × 52 weeks ={" "}
+            <span className="font-semibold">£312/year</span>)
+          </span>
+        </label>
       </ExpandableContent>
       <ExpandableContent title="EV company car">
         {syncedEVP11d.map((p11d, i) => (
@@ -455,7 +395,7 @@ export const OutsideIR35Form = ({ hidden }: { hidden: boolean }) => {
       />
       <ResultsSection
         totalRevenue={totalRevenue}
-        generalExpenses={convertToPence(generalExpenses)}
+        generalExpenses={totalGeneralExpensesPence}
         pensionContributions={convertToPence(pensionContributions)}
         corporationTaxDue={corporationTaxDue}
         retainedProfits={retainedProfits - totalClass1aNI}
@@ -478,7 +418,7 @@ export const OutsideIR35Form = ({ hidden }: { hidden: boolean }) => {
         syncedLoanPlans={syncedLoanPlans}
         studentLoanRepayments={studentLoanRepayments}
         anyStudentLoan={anyStudentLoan}
-        totalAfterTaxPay={totalAfterTaxPay}
+        totalAfterTaxPay={adjustedTotalAfterTaxPay}
       />
       <p className="my-8 text-center">
         Want to compare against a permanent salary?{" "}
@@ -488,7 +428,7 @@ export const OutsideIR35Form = ({ hidden }: { hidden: boolean }) => {
           rel="noreferrer"
           style={{ color: "#3b82f6" }}
         >
-          The Salary Calculator
+          thesalarycalculator.co.uk
         </a>
       </p>
     </div>

@@ -1,6 +1,9 @@
 import "../styles/tailwind.css";
 
-export const metadata = { title: "Contractor income calculator" };
+export const metadata = {
+  title: "Contractor income calculator",
+  icons: { icon: "/favicon.svg" },
+};
 
 export default function RootLayout({
   children,
