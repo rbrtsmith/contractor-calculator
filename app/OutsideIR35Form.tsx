@@ -24,6 +24,12 @@ export const OutsideIR35Form = ({ hidden }: { hidden: boolean }) => {
   const [directorEVP11d, setDirectorEVP11d] = useState<string[]>(["0"]);
   const [daysMode, setDaysMode] = useState<"annual" | "weekly">("annual");
   const [wfhAllowance, setWfhAllowance] = useState(false);
+  const [salaryMode, setSalaryMode] = useState<"uniform" | "per-director">(
+    "uniform",
+  );
+  const [directorSalaries, setDirectorSalaries] = useState<string[]>([
+    `${convertToPounds(TAXES[TAX_YEARS[0]].MAX_TAX_EFFICIENT_SALARY_PENCE)}.00`,
+  ]);
 
   const [values, { handleChange, setValue }] = useForm({
     numberOfDaysWorked: "230",
@@ -59,19 +65,8 @@ export const OutsideIR35Form = ({ hidden }: { hidden: boolean }) => {
       : numberOfDaysWorked;
 
   const numDirs = Math.max(1, Number(numberOfDirectors) || 1);
-  const syncedLoanPlans = Array.from(
-    { length: numDirs },
-    (_, i) => directorLoanPlans[i] ?? "none",
-  );
-  const syncedEVP11d = Array.from(
-    { length: numDirs },
-    (_, i) => directorEVP11d[i] ?? "0",
-  );
 
   const taxes = TAXES[asTaxYear(taxYear)];
-  const totalGeneralExpensesPence =
-    convertToPence(generalExpenses) + (wfhAllowance ? 31200 * numDirs : 0);
-
   const {
     MAX_TAX_EFFICIENT_SALARY_PENCE,
     BASIC_DIVIDEND_TAX_RATE_PERCENTAGE,
@@ -81,26 +76,48 @@ export const OutsideIR35Form = ({ hidden }: { hidden: boolean }) => {
     EV_BIK_RATE_PERCENTAGE,
   } = taxes;
 
+  const defaultSalary = `${convertToPounds(MAX_TAX_EFFICIENT_SALARY_PENCE)}.00`;
+  const syncedSalaries = Array.from({ length: numDirs }, (_, i) => {
+    if (salaryMode === "uniform") return salaryDrawdown;
+    return directorSalaries[i] ?? defaultSalary;
+  });
+
+  const syncedLoanPlans = Array.from(
+    { length: numDirs },
+    (_, i) => directorLoanPlans[i] ?? "none",
+  );
+  const syncedEVP11d = Array.from(
+    { length: numDirs },
+    (_, i) => directorEVP11d[i] ?? "0",
+  );
+
+  const totalGeneralExpensesPence =
+    convertToPence(generalExpenses) + (wfhAllowance ? 31200 * numDirs : 0);
+
   const {
     totalRevenue,
     corporationTaxDue,
     maximumAllowableDividendDrawdown,
     totalTaxableIncome,
+    directorTaxableIncome,
     dividendTaxBreakdown,
+    directorDividendTaxBreakdown,
     retainedProfits,
     totalAfterTaxPay,
     studentLoanRepayments,
     anyStudentLoan,
     effectivePersonalAllowancePence,
+    directorEffectivePersonalAllowancePence,
     maxTaxEfficientDividendPence,
     directorBiK,
     anyBiK,
     totalClass1aNI,
     directorDividendTaxAdjustment,
+    directorAfterTaxPay,
   } = computeOutsideIR35({
     numberOfDaysWorked: Number(effectiveDaysWorked),
     dailyRate: convertToPence(dailyRate),
-    salaryDrawdown: convertToPence(salaryDrawdown),
+    directorSalariesPence: syncedSalaries.map((s) => convertToPence(s)),
     numberOfDirectors: numDirs,
     generalExpenses: totalGeneralExpensesPence,
     pensionContributions: convertToPence(pensionContributions),
@@ -113,6 +130,9 @@ export const OutsideIR35Form = ({ hidden }: { hidden: boolean }) => {
   const wfhAllowancePencePerDirector = wfhAllowance ? 31200 : 0;
   const adjustedTotalAfterTaxPay =
     totalAfterTaxPay + wfhAllowancePencePerDirector * numDirs;
+  const adjustedDirectorAfterTaxPay = directorAfterTaxPay.map(
+    (p) => p + wfhAllowancePencePerDirector,
+  );
 
   return (
     <div
@@ -315,37 +335,151 @@ export const OutsideIR35Form = ({ hidden }: { hidden: boolean }) => {
           />
         ))}
       </ExpandableContent>
-      <TextInput
-        label={`Annual salary drawdown ${
-          Number(numberOfDirectors) > 1 ? "per director" : ""
-        } (${currencyFormat(
-          MAX_TAX_EFFICIENT_SALARY_PENCE,
-        )} is the most tax efficient)`}
-        prepend="£"
-        append={
-          <Button
-            disabled={
-              MAX_TAX_EFFICIENT_SALARY_PENCE ===
-              Math.floor(Number(salaryDrawdown) * 100)
-            }
-            onClick={() => {
-              setValue(
-                "salaryDrawdown",
-                convertToPounds(MAX_TAX_EFFICIENT_SALARY_PENCE).toFixed(2),
-              );
-            }}
-          >
-            Max out
-          </Button>
-        }
-        type="number"
-        step="0.01"
-        min={0}
-        maxLength={6}
-        name="salaryDrawdown"
-        value={salaryDrawdown}
-        onChange={handleChange}
-      />
+      {numDirs === 1 ? (
+        <TextInput
+          label={`Annual salary drawdown (${currencyFormat(
+            MAX_TAX_EFFICIENT_SALARY_PENCE,
+          )} is the most tax efficient)`}
+          prepend="£"
+          append={
+            <Button
+              disabled={
+                MAX_TAX_EFFICIENT_SALARY_PENCE ===
+                Math.floor(Number(salaryDrawdown) * 100)
+              }
+              onClick={() => {
+                setValue(
+                  "salaryDrawdown",
+                  convertToPounds(MAX_TAX_EFFICIENT_SALARY_PENCE).toFixed(2),
+                );
+              }}
+            >
+              Max out
+            </Button>
+          }
+          type="number"
+          step="0.01"
+          min={0}
+          maxLength={6}
+          name="salaryDrawdown"
+          value={salaryDrawdown}
+          onChange={handleChange}
+        />
+      ) : (
+        <div className="mb-6 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+          <div className="px-4 py-2.5 border-b border-slate-200 bg-slate-100">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Annual salary drawdown per director
+            </span>
+          </div>
+          <div className="px-4 pt-3 pb-4">
+            <div className="days-mode-toggle mb-3">
+              <label
+                className={`days-mode-option${salaryMode === "uniform" ? " days-mode-option-active" : ""}`}
+              >
+                <input
+                  type="radio"
+                  className="sr-only"
+                  checked={salaryMode === "uniform"}
+                  onChange={() => setSalaryMode("uniform")}
+                />
+                All directors
+              </label>
+              <label
+                className={`days-mode-option${salaryMode === "per-director" ? " days-mode-option-active" : ""}`}
+              >
+                <input
+                  type="radio"
+                  className="sr-only"
+                  checked={salaryMode === "per-director"}
+                  onChange={() => setSalaryMode("per-director")}
+                />
+                Per director
+              </label>
+            </div>
+            {salaryMode === "uniform" ? (
+              <div className="text-input-wrapper">
+                <div className="text-input-prepend">£</div>
+                <input
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  aria-label="Annual salary drawdown per director"
+                  name="salaryDrawdown"
+                  value={salaryDrawdown}
+                  onChange={handleChange}
+                  className="border border-slate-300 rounded-lg w-full h-10 p-2 pl-9 bg-white text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                />
+                <div className="text-input-append">
+                  <Button
+                    disabled={
+                      MAX_TAX_EFFICIENT_SALARY_PENCE ===
+                      Math.floor(Number(salaryDrawdown) * 100)
+                    }
+                    onClick={() => {
+                      setValue(
+                        "salaryDrawdown",
+                        convertToPounds(MAX_TAX_EFFICIENT_SALARY_PENCE).toFixed(
+                          2,
+                        ),
+                      );
+                    }}
+                  >
+                    Max out
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {syncedSalaries.map((salary, i) => (
+                  <label key={i} className="block">
+                    <div className="pb-1 text-xs text-slate-500">
+                      Director {i + 1}
+                    </div>
+                    <div className="text-input-wrapper">
+                      <div className="text-input-prepend">£</div>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min={0}
+                        aria-label={`Director ${i + 1} annual salary`}
+                        value={salary}
+                        onChange={(e) => {
+                          const updated = [...directorSalaries];
+                          updated[i] = e.currentTarget.value;
+                          setDirectorSalaries(updated);
+                        }}
+                        className="border border-slate-300 rounded-lg w-full h-10 p-2 pl-9 bg-white text-slate-900 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400"
+                      />
+                      <div className="text-input-append">
+                        <Button
+                          disabled={
+                            MAX_TAX_EFFICIENT_SALARY_PENCE ===
+                            Math.floor(Number(salary) * 100)
+                          }
+                          onClick={() => {
+                            const updated = [...directorSalaries];
+                            updated[i] = convertToPounds(
+                              MAX_TAX_EFFICIENT_SALARY_PENCE,
+                            ).toFixed(2);
+                            setDirectorSalaries(updated);
+                          }}
+                        >
+                          Max out
+                        </Button>
+                      </div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            )}
+            <div className="mt-1.5 text-xs text-slate-500">
+              {currencyFormat(MAX_TAX_EFFICIENT_SALARY_PENCE)} is the most tax
+              efficient
+            </div>
+          </div>
+        </div>
+      )}
       <TextInput
         label={`Annual dividend drawdown ${
           Number(numberOfDirectors) > 1 ? "per director" : ""
@@ -400,7 +534,11 @@ export const OutsideIR35Form = ({ hidden }: { hidden: boolean }) => {
         corporationTaxDue={corporationTaxDue}
         retainedProfits={retainedProfits - totalClass1aNI}
         totalTaxableIncome={totalTaxableIncome}
+        directorTaxableIncome={directorTaxableIncome}
         TAX_FREE_PERSONAL_ALLOWANCE_PENCE={effectivePersonalAllowancePence}
+        directorEffectivePersonalAllowancePence={
+          directorEffectivePersonalAllowancePence
+        }
         DIVIDEND_TAX_FREE_ALLOWANCE_PENCE={DIVIDEND_TAX_FREE_ALLOWANCE_PENCE}
         BASIC_DIVIDEND_TAX_RATE_PERCENTAGE={BASIC_DIVIDEND_TAX_RATE_PERCENTAGE}
         HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE={
@@ -410,6 +548,7 @@ export const OutsideIR35Form = ({ hidden }: { hidden: boolean }) => {
           ADDITIONAL_DIVIDEND_TAX_RATE_PERCENTAGE
         }
         dividendTaxBreakdown={dividendTaxBreakdown}
+        directorDividendTaxBreakdown={directorDividendTaxBreakdown}
         EV_BIK_RATE_PERCENTAGE={EV_BIK_RATE_PERCENTAGE}
         numDirs={numDirs}
         directorBiK={directorBiK}
@@ -419,6 +558,7 @@ export const OutsideIR35Form = ({ hidden }: { hidden: boolean }) => {
         studentLoanRepayments={studentLoanRepayments}
         anyStudentLoan={anyStudentLoan}
         totalAfterTaxPay={adjustedTotalAfterTaxPay}
+        directorAfterTaxPay={adjustedDirectorAfterTaxPay}
       />
       <p className="my-8 text-center">
         Want to compare against a permanent salary?{" "}

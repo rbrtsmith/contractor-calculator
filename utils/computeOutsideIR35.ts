@@ -46,7 +46,7 @@ const getCorporationTaxDue = ({
 export const computeOutsideIR35 = ({
   numberOfDaysWorked,
   dailyRate,
-  salaryDrawdown,
+  directorSalariesPence,
   numberOfDirectors,
   generalExpenses,
   pensionContributions,
@@ -57,7 +57,7 @@ export const computeOutsideIR35 = ({
 }: {
   numberOfDaysWorked: number;
   dailyRate: number;
-  salaryDrawdown: number;
+  directorSalariesPence: number[];
   numberOfDirectors: number;
   generalExpenses: number;
   pensionContributions: number;
@@ -75,7 +75,12 @@ export const computeOutsideIR35 = ({
     MAXIMUM_FULL_PERSONAL_ALLOWANCE_THRESHOLD_PENCE,
   } = taxes;
 
-  const totalSalaryDrawdown = salaryDrawdown * numberOfDirectors;
+  const syncedSalaries = Array.from(
+    { length: numberOfDirectors },
+    (_, i) => directorSalariesPence[i] ?? 0,
+  );
+
+  const totalSalaryDrawdown = syncedSalaries.reduce((s, v) => s + v, 0);
   const totalDividendDrawdown = dividendDrawdown * numberOfDirectors;
   const totalRevenue = numberOfDaysWorked * dailyRate;
   const totalExpenses = generalExpenses + pensionContributions;
@@ -91,59 +96,38 @@ export const computeOutsideIR35 = ({
     (totalRevenue - corporationTaxDue - totalExpenses - totalSalaryDrawdown) /
     numberOfDirectors;
 
-  const totalTaxableIncome =
-    salaryDrawdown + dividendDrawdown - taxes.DIVIDEND_TAX_FREE_ALLOWANCE_PENCE;
-
-  const dividendTaxBreakdown = getDividendTaxes({
-    dividendDrawdown,
-    salaryDrawdown,
-    taxes,
-  });
-
-  const retainedProfits =
-    totalRevenue -
-    corporationTaxDue -
-    totalSalaryDrawdown -
-    totalExpenses -
-    totalDividendDrawdown;
-
-  const totalAfterTaxPay =
-    dividendDrawdown + salaryDrawdown - dividendTaxBreakdown.total;
-
-  const incomePerDirectorPence = salaryDrawdown + dividendDrawdown;
-
-  const studentLoanRepayments = directorLoanPlans.map((plan) =>
-    getStudentLoanRepayment({
-      plan,
-      incomePence: incomePerDirectorPence,
-      taxes,
-    }),
-  );
-  const anyStudentLoan = studentLoanRepayments.some((r) => r > 0);
-
-  const totalIncomePence = salaryDrawdown + dividendDrawdown;
-  const effectivePersonalAllowancePence = Math.max(
-    0,
-    TAX_FREE_PERSONAL_ALLOWANCE_PENCE -
-      Math.max(
-        0,
-        totalIncomePence - MAXIMUM_FULL_PERSONAL_ALLOWANCE_THRESHOLD_PENCE,
-      ) /
-        2,
-  );
-
   const higherRateThreshold =
     TAX_FREE_PERSONAL_ALLOWANCE_PENCE + HIGHER_DIVIDEND_TAX_THRESHOLD_PENCE;
 
-  const maxTaxEfficientDividendPence = Math.min(
-    Math.max(0, higherRateThreshold - salaryDrawdown),
-    maximumAllowableDividendDrawdown,
-  );
+  // Per-director calculations — each uses their own salary
+  const directorResults = syncedSalaries.map((salaryDrawdown, i) => {
+    const totalIncomePence = salaryDrawdown + dividendDrawdown;
 
-  const directorBiK = directorEVP11dPence.map((p11dPence) => {
+    const dividendTaxBreakdown = getDividendTaxes({
+      dividendDrawdown,
+      salaryDrawdown,
+      taxes,
+    });
+
+    const effectivePersonalAllowancePence = Math.max(
+      0,
+      TAX_FREE_PERSONAL_ALLOWANCE_PENCE -
+        Math.max(
+          0,
+          totalIncomePence - MAXIMUM_FULL_PERSONAL_ALLOWANCE_THRESHOLD_PENCE,
+        ) /
+          2,
+    );
+
+    const maxTaxEfficientDividendPence = Math.min(
+      Math.max(0, higherRateThreshold - salaryDrawdown),
+      maximumAllowableDividendDrawdown,
+    );
+
+    const p11dPence = directorEVP11dPence[i] ?? 0;
     const bikValue = p11dPence * (EV_BIK_RATE_PERCENTAGE / 100);
-    const bikStart = salaryDrawdown;
-    const bikEnd = salaryDrawdown + bikValue;
+    const bikStart = totalIncomePence;
+    const bikEnd = totalIncomePence + bikValue;
 
     const bikInBasic = Math.max(
       0,
@@ -165,44 +149,114 @@ export const computeOutsideIR35 = ({
       bikInHigher * INCOME_TAX_HIGHER_RATE +
       bikInAdditional * INCOME_TAX_ADDITIONAL_RATE;
 
-    return {
+    const bik = {
       p11dPence,
       bikValue,
       incomeTaxOnBik,
       class1aNI: bikValue * (EMPLOYER_NI_RATE_PERCENTAGE / 100),
     };
+
+    const dividendTaxAdjustment = (() => {
+      if (bik.bikValue === 0) return 0;
+      if (totalIncomePence + bik.bikValue <= higherRateThreshold) return 0;
+      const withBiK = getDividendTaxes({
+        dividendDrawdown,
+        salaryDrawdown,
+        additionalEmploymentIncome: bik.bikValue,
+        taxes,
+      });
+      return Math.max(0, withBiK.total - dividendTaxBreakdown.total);
+    })();
+
+    const studentLoanRepayment = getStudentLoanRepayment({
+      plan: directorLoanPlans[i] ?? "none",
+      incomePence: totalIncomePence,
+      taxes,
+    });
+
+    const afterTaxPay =
+      dividendDrawdown + salaryDrawdown - dividendTaxBreakdown.total;
+
+    return {
+      salaryDrawdown,
+      dividendTaxBreakdown,
+      effectivePersonalAllowancePence,
+      maxTaxEfficientDividendPence,
+      bik,
+      dividendTaxAdjustment,
+      studentLoanRepayment,
+      afterTaxPay,
+      totalIncomePence,
+    };
   });
 
+  const highestSalaryIndex = syncedSalaries.reduce(
+    (maxIdx, salary, i) => (salary > syncedSalaries[maxIdx] ? i : maxIdx),
+    0,
+  );
+  const rep = directorResults[highestSalaryIndex];
+
+  const directorTaxableIncome = directorResults.map(
+    (d) =>
+      d.salaryDrawdown +
+      dividendDrawdown -
+      taxes.DIVIDEND_TAX_FREE_ALLOWANCE_PENCE,
+  );
+
+  // Keep scalar for single-director display compatibility
+  const totalTaxableIncome =
+    rep.salaryDrawdown +
+    dividendDrawdown -
+    taxes.DIVIDEND_TAX_FREE_ALLOWANCE_PENCE;
+
+  const totalAfterTaxPay = directorResults.reduce(
+    (sum, d) => sum + d.afterTaxPay,
+    0,
+  );
+
+  const retainedProfits =
+    totalRevenue -
+    corporationTaxDue -
+    totalSalaryDrawdown -
+    totalExpenses -
+    totalDividendDrawdown;
+
+  const directorBiK = directorResults.map((d) => d.bik);
   const anyBiK = directorBiK.some((b) => b.p11dPence > 0);
   const totalClass1aNI = directorBiK.reduce((sum, b) => sum + b.class1aNI, 0);
 
-  const directorDividendTaxAdjustment = directorBiK.map((bik) => {
-    if (bik.bikValue === 0) return 0;
-    if (totalIncomePence + bik.bikValue <= higherRateThreshold) return 0;
-    const withBiK = getDividendTaxes({
-      dividendDrawdown,
-      salaryDrawdown,
-      additionalEmploymentIncome: bik.bikValue,
-      taxes,
-    });
-    return Math.max(0, withBiK.total - dividendTaxBreakdown.total);
-  });
+  const studentLoanRepayments = directorResults.map(
+    (d) => d.studentLoanRepayment,
+  );
+  const anyStudentLoan = studentLoanRepayments.some((r) => r > 0);
+
+  const directorDividendTaxAdjustment = directorResults.map(
+    (d) => d.dividendTaxAdjustment,
+  );
 
   return {
     totalRevenue,
     totalTaxableIncome,
+    directorTaxableIncome,
     corporationTaxDue,
     maximumAllowableDividendDrawdown,
-    dividendTaxBreakdown,
+    dividendTaxBreakdown: rep.dividendTaxBreakdown,
+    directorDividendTaxBreakdown: directorResults.map(
+      (d) => d.dividendTaxBreakdown,
+    ),
     retainedProfits,
     totalAfterTaxPay,
     studentLoanRepayments,
     anyStudentLoan,
-    effectivePersonalAllowancePence,
-    maxTaxEfficientDividendPence,
+    effectivePersonalAllowancePence: rep.effectivePersonalAllowancePence,
+    directorEffectivePersonalAllowancePence: directorResults.map(
+      (d) => d.effectivePersonalAllowancePence,
+    ),
+    maxTaxEfficientDividendPence: rep.maxTaxEfficientDividendPence,
     directorBiK,
     anyBiK,
     totalClass1aNI,
     directorDividendTaxAdjustment,
+    directorAfterTaxPay: directorResults.map((d) => d.afterTaxPay),
   };
 };

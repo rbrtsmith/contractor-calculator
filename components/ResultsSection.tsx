@@ -22,12 +22,15 @@ interface Props {
   corporationTaxDue: number;
   retainedProfits: number;
   totalTaxableIncome: number;
+  directorTaxableIncome: number[];
   TAX_FREE_PERSONAL_ALLOWANCE_PENCE: number;
+  directorEffectivePersonalAllowancePence: number[];
   DIVIDEND_TAX_FREE_ALLOWANCE_PENCE: number;
   BASIC_DIVIDEND_TAX_RATE_PERCENTAGE: number;
   HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE: number;
   ADDITIONAL_DIVIDEND_TAX_RATE_PERCENTAGE: number;
   dividendTaxBreakdown: DividendTaxBreakdown;
+  directorDividendTaxBreakdown: DividendTaxBreakdown[];
   EV_BIK_RATE_PERCENTAGE: number;
   numDirs: number;
   directorBiK: DirectorBiK[];
@@ -37,6 +40,7 @@ interface Props {
   studentLoanRepayments: number[];
   anyStudentLoan: boolean;
   totalAfterTaxPay: number;
+  directorAfterTaxPay: number[];
 }
 
 const StatCard = ({
@@ -144,12 +148,15 @@ export const ResultsSection = ({
   corporationTaxDue,
   retainedProfits,
   totalTaxableIncome,
+  directorTaxableIncome,
   TAX_FREE_PERSONAL_ALLOWANCE_PENCE,
+  directorEffectivePersonalAllowancePence,
   DIVIDEND_TAX_FREE_ALLOWANCE_PENCE,
   BASIC_DIVIDEND_TAX_RATE_PERCENTAGE,
   HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE,
   ADDITIONAL_DIVIDEND_TAX_RATE_PERCENTAGE,
   dividendTaxBreakdown,
+  directorDividendTaxBreakdown,
   EV_BIK_RATE_PERCENTAGE,
   numDirs,
   directorBiK,
@@ -159,9 +166,10 @@ export const ResultsSection = ({
   studentLoanRepayments,
   anyStudentLoan,
   totalAfterTaxPay,
+  directorAfterTaxPay,
 }: Props) => {
   const netPayPerDirector = (i: number) =>
-    totalAfterTaxPay -
+    directorAfterTaxPay[i] -
     studentLoanRepayments[i] -
     directorBiK[i].incomeTaxOnBik -
     directorDividendTaxAdjustment[i];
@@ -205,47 +213,85 @@ export const ResultsSection = ({
       </SectionCard>
 
       {/* Taxable income */}
-      <SectionCard
-        title={numDirs > 1 ? "Taxable income per director" : "Taxable income"}
-      >
-        <Row
-          label="Taxable income"
-          value={currencyFormat(totalTaxableIncome)}
-          bold
-        />
-        <Row
-          label={`Personal allowance`}
-          value={currencyFormat(TAX_FREE_PERSONAL_ALLOWANCE_PENCE)}
-          muted
-        />
-      </SectionCard>
+      {numDirs > 1 ? (
+        Array.from({ length: numDirs }, (_, i) => (
+          <SectionCard key={i} title={`Director ${i + 1} taxable income`}>
+            <Row
+              label={`Director ${i + 1} taxable income`}
+              value={currencyFormat(directorTaxableIncome[i])}
+              bold
+            />
+            <Row
+              label="Personal allowance"
+              value={currencyFormat(directorEffectivePersonalAllowancePence[i])}
+              muted
+            />
+          </SectionCard>
+        ))
+      ) : (
+        <SectionCard title="Taxable income">
+          <Row
+            label="Taxable income"
+            value={currencyFormat(totalTaxableIncome)}
+            bold
+          />
+          <Row
+            label="Personal allowance"
+            value={currencyFormat(TAX_FREE_PERSONAL_ALLOWANCE_PENCE)}
+            muted
+          />
+        </SectionCard>
+      )}
 
       {/* Dividend tax */}
-      <SectionCard
-        title={
-          numDirs > 1
-            ? `Dividend tax per director (first ${currencyFormat(DIVIDEND_TAX_FREE_ALLOWANCE_PENCE)} tax-free)`
-            : `Dividend tax (first ${currencyFormat(DIVIDEND_TAX_FREE_ALLOWANCE_PENCE)} tax-free)`
-        }
-      >
-        <Row
-          label={`Basic rate (${BASIC_DIVIDEND_TAX_RATE_PERCENTAGE}%)`}
-          value={currencyFormat(dividendTaxBreakdown.basic)}
-        />
-        <Row
-          label={`Higher rate (${HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE}%)`}
-          value={currencyFormat(dividendTaxBreakdown.higher)}
-        />
-        <Row
-          label={`Additional rate (${ADDITIONAL_DIVIDEND_TAX_RATE_PERCENTAGE}%)`}
-          value={currencyFormat(dividendTaxBreakdown.additional)}
-        />
-        <Row
-          label="Total dividend tax"
-          value={currencyFormat(dividendTaxBreakdown.total)}
-          bold
-        />
-      </SectionCard>
+      {numDirs > 1 ? (
+        Array.from({ length: numDirs }, (_, i) => (
+          <SectionCard
+            key={i}
+            title={`Director ${i + 1} dividend tax (first ${currencyFormat(DIVIDEND_TAX_FREE_ALLOWANCE_PENCE)} tax-free)`}
+          >
+            <Row
+              label={`Basic rate (${BASIC_DIVIDEND_TAX_RATE_PERCENTAGE}%)`}
+              value={currencyFormat(directorDividendTaxBreakdown[i].basic)}
+            />
+            <Row
+              label={`Higher rate (${HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE}%)`}
+              value={currencyFormat(directorDividendTaxBreakdown[i].higher)}
+            />
+            <Row
+              label={`Additional rate (${ADDITIONAL_DIVIDEND_TAX_RATE_PERCENTAGE}%)`}
+              value={currencyFormat(directorDividendTaxBreakdown[i].additional)}
+            />
+            <Row
+              label="Total dividend tax"
+              value={currencyFormat(directorDividendTaxBreakdown[i].total)}
+              bold
+            />
+          </SectionCard>
+        ))
+      ) : (
+        <SectionCard
+          title={`Dividend tax (first ${currencyFormat(DIVIDEND_TAX_FREE_ALLOWANCE_PENCE)} tax-free)`}
+        >
+          <Row
+            label={`Basic rate (${BASIC_DIVIDEND_TAX_RATE_PERCENTAGE}%)`}
+            value={currencyFormat(dividendTaxBreakdown.basic)}
+          />
+          <Row
+            label={`Higher rate (${HIGHER_DIVIDEND_TAX_RATE_PERCENTAGE}%)`}
+            value={currencyFormat(dividendTaxBreakdown.higher)}
+          />
+          <Row
+            label={`Additional rate (${ADDITIONAL_DIVIDEND_TAX_RATE_PERCENTAGE}%)`}
+            value={currencyFormat(dividendTaxBreakdown.additional)}
+          />
+          <Row
+            label="Total dividend tax"
+            value={currencyFormat(dividendTaxBreakdown.total)}
+            bold
+          />
+        </SectionCard>
+      )}
 
       {/* EV BiK */}
       {anyBiK && (

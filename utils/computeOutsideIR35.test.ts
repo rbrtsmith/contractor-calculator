@@ -11,7 +11,7 @@ describe("computeOutsideIR35", () => {
     const result = computeOutsideIR35({
       numberOfDaysWorked: 200,
       dailyRate: p(500),
-      salaryDrawdown: p(12564),
+      directorSalariesPence: [p(12564)],
       numberOfDirectors: 1,
       generalExpenses: 0,
       pensionContributions: 0,
@@ -30,7 +30,7 @@ describe("computeOutsideIR35", () => {
     const result = computeOutsideIR35({
       numberOfDaysWorked: 200,
       dailyRate: p(500),
-      salaryDrawdown: p(12564),
+      directorSalariesPence: [p(12564)],
       numberOfDirectors: 1,
       generalExpenses: 0,
       pensionContributions: 0,
@@ -51,7 +51,7 @@ describe("computeOutsideIR35", () => {
     const result = computeOutsideIR35({
       numberOfDaysWorked: 200,
       dailyRate: p(500),
-      salaryDrawdown: p(12564),
+      directorSalariesPence: [p(12564)],
       numberOfDirectors: 1,
       generalExpenses: 0,
       pensionContributions: 0,
@@ -69,7 +69,7 @@ describe("computeOutsideIR35", () => {
     const result = computeOutsideIR35({
       numberOfDaysWorked: 200,
       dailyRate: p(500),
-      salaryDrawdown: p(12564),
+      directorSalariesPence: [p(12564), p(12564)],
       numberOfDirectors: 2,
       generalExpenses: 0,
       pensionContributions: 0,
@@ -94,7 +94,7 @@ describe("computeOutsideIR35", () => {
     const result = computeOutsideIR35({
       numberOfDaysWorked: 100,
       dailyRate: p(500),
-      salaryDrawdown: p(12564),
+      directorSalariesPence: [p(12564)],
       numberOfDirectors: 1,
       generalExpenses: 0,
       pensionContributions: 0,
@@ -112,7 +112,7 @@ describe("computeOutsideIR35", () => {
     const result = computeOutsideIR35({
       numberOfDaysWorked: 200,
       dailyRate: p(500),
-      salaryDrawdown: p(12564),
+      directorSalariesPence: [p(12564)],
       numberOfDirectors: 1,
       generalExpenses: 0,
       pensionContributions: 0,
@@ -130,7 +130,7 @@ describe("computeOutsideIR35", () => {
     const result = computeOutsideIR35({
       numberOfDaysWorked: 200,
       dailyRate: p(500),
-      salaryDrawdown: p(12564),
+      directorSalariesPence: [p(12564)],
       numberOfDirectors: 1,
       generalExpenses: 0,
       pensionContributions: 0,
@@ -148,7 +148,7 @@ describe("computeOutsideIR35", () => {
     const result = computeOutsideIR35({
       numberOfDaysWorked: 200,
       dailyRate: p(500),
-      salaryDrawdown: p(12564),
+      directorSalariesPence: [p(12564)],
       numberOfDirectors: 1,
       generalExpenses: 0,
       pensionContributions: 0,
@@ -166,7 +166,7 @@ describe("computeOutsideIR35", () => {
     const result = computeOutsideIR35({
       numberOfDaysWorked: 200,
       dailyRate: p(500),
-      salaryDrawdown: p(12564),
+      directorSalariesPence: [p(12564)],
       numberOfDirectors: 1,
       generalExpenses: 0,
       pensionContributions: 0,
@@ -186,7 +186,7 @@ describe("computeOutsideIR35", () => {
     const result = computeOutsideIR35({
       numberOfDaysWorked: 400,
       dailyRate: p(1000),
-      salaryDrawdown: p(12564),
+      directorSalariesPence: [p(12564)],
       numberOfDirectors: 1,
       generalExpenses: 0,
       pensionContributions: 0,
