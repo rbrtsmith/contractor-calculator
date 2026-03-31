@@ -17,7 +17,7 @@ describe("computeOutsideIR35", () => {
       pensionContributions: 0,
       dividendDrawdown: p(25000),
       directorEVP11dPence: [0],
-      directorLoanPlans: ["none"],
+      directorLoanPlans: [[]],
       taxes,
     });
 
@@ -36,7 +36,7 @@ describe("computeOutsideIR35", () => {
       pensionContributions: 0,
       dividendDrawdown: p(25000),
       directorEVP11dPence: [0],
-      directorLoanPlans: ["none"],
+      directorLoanPlans: [[]],
       taxes,
     });
 
@@ -57,7 +57,7 @@ describe("computeOutsideIR35", () => {
       pensionContributions: 0,
       dividendDrawdown: 0,
       directorEVP11dPence: [0],
-      directorLoanPlans: ["none"],
+      directorLoanPlans: [[]],
       taxes: taxes2223,
     });
 
@@ -75,7 +75,7 @@ describe("computeOutsideIR35", () => {
       pensionContributions: 0,
       dividendDrawdown: 0,
       directorEVP11dPence: [0, 0],
-      directorLoanPlans: ["none", "none"],
+      directorLoanPlans: [[], []],
       taxes,
     });
 
@@ -100,7 +100,7 @@ describe("computeOutsideIR35", () => {
       pensionContributions: 0,
       dividendDrawdown: 0,
       directorEVP11dPence: [p(50000)],
-      directorLoanPlans: ["none"],
+      directorLoanPlans: [[]],
       taxes,
     });
 
@@ -118,7 +118,7 @@ describe("computeOutsideIR35", () => {
       pensionContributions: 0,
       dividendDrawdown: p(20000),
       directorEVP11dPence: [p(50000)], // BiK = £2,000
-      directorLoanPlans: ["none"],
+      directorLoanPlans: [[]],
       taxes,
     });
 
@@ -136,7 +136,7 @@ describe("computeOutsideIR35", () => {
       pensionContributions: 0,
       dividendDrawdown: p(20000),
       directorEVP11dPence: [p(1000000)], // BiK = £40,000
-      directorLoanPlans: ["none"],
+      directorLoanPlans: [[]],
       taxes,
     });
 
@@ -154,7 +154,7 @@ describe("computeOutsideIR35", () => {
       pensionContributions: 0,
       dividendDrawdown: p(30000),
       directorEVP11dPence: [0],
-      directorLoanPlans: ["plan2"],
+      directorLoanPlans: [["plan2"]],
       taxes,
     });
 
@@ -172,7 +172,7 @@ describe("computeOutsideIR35", () => {
       pensionContributions: 0,
       dividendDrawdown: p(30000),
       directorEVP11dPence: [0],
-      directorLoanPlans: ["none"],
+      directorLoanPlans: [[]],
       taxes,
     });
 
@@ -192,7 +192,7 @@ describe("computeOutsideIR35", () => {
       pensionContributions: 0,
       dividendDrawdown: 0,
       directorEVP11dPence: [0],
-      directorLoanPlans: ["none"],
+      directorLoanPlans: [[]],
       taxes,
     });
 

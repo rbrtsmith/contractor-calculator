@@ -34,7 +34,7 @@ async function setupInsideIR35(
   await user.clear(rateInput);
   await user.type(rateInput, rate);
 
-  await user.click(screen.getByRole("button", { name: /expenses/i }));
+  await user.click(screen.getByRole("button", { name: /^expenses$/i }));
 
   const expensesInput = screen.getByRole("spinbutton", {
     name: /annual allowable expenses/i,
@@ -51,10 +51,14 @@ async function setupInsideIR35(
   }
 
   if (studentLoanPlan) {
-    await user.click(screen.getByRole("button", { name: /student loan/i }));
-    await user.selectOptions(
-      screen.getByRole("combobox", { name: /student loan plan/i }),
-      studentLoanPlan,
+    await user.click(screen.getByRole("button", { name: /^student loan$/i }));
+    const labelMap: Record<string, string> = {
+      plan1: "Plan 1",
+      plan2: "Plan 2",
+      postgrad: "Postgrad Loan",
+    };
+    await user.click(
+      screen.getByRole("checkbox", { name: labelMap[studentLoanPlan] }),
     );
   }
 }
@@ -336,7 +340,7 @@ test("inside IR35: weekly days mode — 46 weeks × 5 days at £250/day matches 
   await user.clear(rateInput);
   await user.type(rateInput, "250");
 
-  await user.click(screen.getByRole("button", { name: /expenses/i }));
+  await user.click(screen.getByRole("button", { name: /^expenses$/i }));
   const expensesInput = screen.getByRole("spinbutton", {
     name: /annual allowable expenses/i,
   });
@@ -393,6 +397,104 @@ test("inside IR35: switching back to Outside IR35 tab hides the inside form", as
   ).toBeVisible();
 });
 
+// Tooltip integration tests
+test("inside IR35: gross contract value tooltip shows on click", async () => {
+  const user = userEvent.setup();
+  render(<Home />);
+  await user.click(screen.getByRole("button", { name: /inside ir35/i }));
+  await user.click(
+    screen.getByRole("button", { name: "Gross contract value information" }),
+  );
+  expect(screen.getByRole("tooltip")).toBeInTheDocument();
+});
+
+test("inside IR35: employer NI tooltip shows on click", async () => {
+  const user = userEvent.setup();
+  render(<Home />);
+  await user.click(screen.getByRole("button", { name: /inside ir35/i }));
+  await user.click(
+    screen.getByRole("button", { name: "Employer NI information" }),
+  );
+  expect(screen.getByRole("tooltip")).toBeInTheDocument();
+});
+
+test("inside IR35: gross PAYE salary tooltip shows on click", async () => {
+  const user = userEvent.setup();
+  render(<Home />);
+  await user.click(screen.getByRole("button", { name: /inside ir35/i }));
+  await user.click(
+    screen.getByRole("button", { name: "Gross PAYE salary information" }),
+  );
+  expect(screen.getByRole("tooltip")).toBeInTheDocument();
+});
+
+test("inside IR35: total income tax tooltip shows on click", async () => {
+  const user = userEvent.setup();
+  render(<Home />);
+  await user.click(screen.getByRole("button", { name: /inside ir35/i }));
+  await user.click(
+    screen.getByRole("button", { name: "Total income tax information" }),
+  );
+  expect(screen.getByRole("tooltip")).toBeInTheDocument();
+});
+
+test("inside IR35: employee NI tooltip shows on click", async () => {
+  const user = userEvent.setup();
+  render(<Home />);
+  await user.click(screen.getByRole("button", { name: /inside ir35/i }));
+  await user.click(
+    screen.getByRole("button", { name: "Employee NI information" }),
+  );
+  expect(screen.getByRole("tooltip")).toBeInTheDocument();
+});
+
+test("inside IR35: daily rate tooltip shows on click", async () => {
+  const user = userEvent.setup();
+  render(<Home />);
+  await user.click(screen.getByRole("button", { name: /inside ir35/i }));
+  await user.click(
+    screen.getByRole("button", { name: "Daily rate information" }),
+  );
+  expect(screen.getByRole("tooltip")).toBeInTheDocument();
+});
+
+test("inside IR35: annual allowable expenses tooltip shows on click", async () => {
+  const user = userEvent.setup();
+  render(<Home />);
+  await user.click(screen.getByRole("button", { name: /inside ir35/i }));
+  await user.click(screen.getByRole("button", { name: /^expenses$/i }));
+  await user.click(
+    screen.getByRole("button", {
+      name: "Annual allowable expenses information",
+    }),
+  );
+  expect(screen.getByRole("tooltip")).toBeInTheDocument();
+});
+
+test("inside IR35: annual pension contributions tooltip shows on click", async () => {
+  const user = userEvent.setup();
+  render(<Home />);
+  await user.click(screen.getByRole("button", { name: /inside ir35/i }));
+  await user.click(screen.getByRole("button", { name: /^expenses$/i }));
+  await user.click(
+    screen.getByRole("button", {
+      name: "Annual pension contributions information",
+    }),
+  );
+  expect(screen.getByRole("tooltip")).toBeInTheDocument();
+});
+
+test("inside IR35: student loan plan tooltip shows on click", async () => {
+  const user = userEvent.setup();
+  render(<Home />);
+  await user.click(screen.getByRole("button", { name: /inside ir35/i }));
+  await user.click(screen.getByRole("button", { name: /^student loan$/i }));
+  await user.click(
+    screen.getByRole("button", { name: "Student loan plan information" }),
+  );
+  expect(screen.getByRole("tooltip")).toBeInTheDocument();
+});
+
 // I-3: Switching back from weekly to annual inside IR35 form — annual days input reappears.
 // Covers InsideIR35Form.tsx setDaysMode("annual") onChange.
 test("inside IR35: days mode toggle — switch to weekly then back to annual restores direct days input", async () => {
@@ -415,4 +517,22 @@ test("inside IR35: days mode toggle — switch to weekly then back to annual res
   expect(
     screen.getByRole("spinbutton", { name: /days worked annually/i }),
   ).toBeInTheDocument();
+});
+
+// gross salary £71,086.96 — postgrad threshold £21,000. Above = £50,086.96. 6% = £3,005.22.
+test("inside IR35: postgrad loan deducted from net pay — 180 days at £450/day in 2026/27", async () => {
+  const user = userEvent.setup();
+  render(<Home />);
+  await user.click(screen.getByRole("button", { name: /inside ir35/i }));
+  await user.selectOptions(
+    screen.getByRole("combobox", { name: /tax year/i }),
+    "2026/27",
+  );
+  await user.click(screen.getByRole("button", { name: /^student loan$/i }));
+  await user.click(screen.getByRole("checkbox", { name: "Postgrad Loan" }));
+  await setupInsideIR35(user, { days: "180", rate: "450" });
+
+  expect(
+    screen.getByRole("definition", { name: /postgrad loan/i }),
+  ).toHaveTextContent("£3,005.22");
 });

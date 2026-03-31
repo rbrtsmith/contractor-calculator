@@ -63,7 +63,7 @@ export const computeOutsideIR35 = ({
   pensionContributions: number;
   dividendDrawdown: number;
   directorEVP11dPence: number[];
-  directorLoanPlans: string[];
+  directorLoanPlans: string[][];
   taxes: Taxes;
 }) => {
   const {
@@ -169,7 +169,7 @@ export const computeOutsideIR35 = ({
     })();
 
     const studentLoanRepayment = getStudentLoanRepayment({
-      plan: directorLoanPlans[i] ?? "none",
+      plans: directorLoanPlans[i] ?? [],
       incomePence: totalIncomePence,
       taxes,
     });

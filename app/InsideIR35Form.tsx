@@ -7,6 +7,7 @@ import {
   StatCard,
   SectionCard,
   Row,
+  Tooltip,
 } from "../components";
 import {
   currencyFormat,
@@ -16,14 +17,14 @@ import {
 } from "../utils";
 import { TAXES, TAX_YEARS, asTaxYear } from "../constants";
 
-const loanPlanOptions = [
-  { label: "None", value: "none" },
+const LOAN_PLAN_OPTIONS = [
   { label: "Plan 1", value: "plan1" },
   { label: "Plan 2", value: "plan2" },
+  { label: "Postgrad Loan", value: "postgrad" },
 ];
 
 export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
-  const [studentLoanPlan, setStudentLoanPlan] = useState("none");
+  const [studentLoanPlans, setStudentLoanPlans] = useState<string[]>([]);
   const [daysMode, setDaysMode] = useState<"annual" | "weekly">("annual");
 
   const [values, { handleChange }] = useForm({
@@ -61,7 +62,7 @@ export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
   });
 
   const studentLoanRepayment = getStudentLoanRepayment({
-    plan: studentLoanPlan,
+    plans: studentLoanPlans,
     incomePence: result.grossSalary,
     taxes,
   });
@@ -169,15 +170,77 @@ export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
           name="dailyRate"
           value={dailyRate}
           onChange={handleChange}
+          tooltip={
+            <Tooltip
+              triggerLabel="Daily rate information"
+              content="Your day rate charged to the client. Multiply by days worked to get your gross contract value."
+            />
+          }
         />
         <ExpandableContent title="Student loan">
-          <SelectInput
-            label="Student loan plan"
-            name="studentLoanPlan"
-            value={studentLoanPlan}
-            onChange={(e) => setStudentLoanPlan(e.currentTarget.value)}
-            options={loanPlanOptions}
-          />
+          <div className="mb-2">
+            <div className="pb-1.5 flex items-center gap-1.5">
+              <span className="text-sm font-medium text-slate-700">
+                Student loan plans
+              </span>
+              <Tooltip
+                triggerLabel="Student loan plan information"
+                content={
+                  <>
+                    <p className="font-semibold mb-1">Repayment thresholds:</p>
+                    <ul className="list-disc list-inside space-y-0.5">
+                      <li>
+                        Plan 1: 9% above £
+                        {(
+                          taxes.STUDENT_LOAN_PLAN1_THRESHOLD_PENCE / 100
+                        ).toLocaleString()}
+                      </li>
+                      <li>
+                        Plan 2: 9% above £
+                        {(
+                          taxes.STUDENT_LOAN_PLAN2_THRESHOLD_PENCE / 100
+                        ).toLocaleString()}
+                        . If you hold Plan 1 &amp; Plan 2, only 9% from the
+                        lower threshold is charged.
+                      </li>
+                      <li>
+                        Postgrad Loan: 6% above £
+                        {(
+                          taxes.STUDENT_LOAN_POSTGRAD_THRESHOLD_PENCE / 100
+                        ).toLocaleString()}
+                        . Calculated independently of undergraduate loans.
+                      </li>
+                    </ul>
+                    <p className="mt-1">
+                      Repayments are deducted from your net take-home pay.
+                    </p>
+                  </>
+                }
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              {LOAN_PLAN_OPTIONS.map(({ label, value }) => (
+                <label
+                  key={value}
+                  className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer select-none"
+                >
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 accent-blue-500 cursor-pointer"
+                    checked={studentLoanPlans.includes(value)}
+                    onChange={(e) => {
+                      setStudentLoanPlans(
+                        e.currentTarget.checked
+                          ? [...studentLoanPlans, value]
+                          : studentLoanPlans.filter((p) => p !== value),
+                      );
+                    }}
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </div>
         </ExpandableContent>
         <ExpandableContent title="Expenses">
           <TextInput
@@ -189,6 +252,26 @@ export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
             name="expenses"
             value={expenses}
             onChange={handleChange}
+            tooltip={
+              <Tooltip
+                triggerLabel="Annual allowable expenses information"
+                content={
+                  <>
+                    <p className="font-semibold mb-1">What to include:</p>
+                    <ul className="list-disc list-inside space-y-0.5 mb-2">
+                      <li>Travel &amp; accommodation</li>
+                      <li>Professional subscriptions</li>
+                      <li>Equipment &amp; tools</li>
+                    </ul>
+                    <p>
+                      Inside IR35, allowable expenses are deducted from your
+                      gross contract value before employer NI and PAYE are
+                      calculated.
+                    </p>
+                  </>
+                }
+              />
+            }
           />
           <TextInput
             label="Annual pension contributions"
@@ -199,6 +282,12 @@ export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
             name="pensionContributions"
             value={pensionContributions}
             onChange={handleChange}
+            tooltip={
+              <Tooltip
+                triggerLabel="Annual pension contributions information"
+                content="Employer pension contributions deducted from your gross contract value before PAYE is calculated, reducing the salary on which income tax and NI are charged."
+              />
+            }
           />
         </ExpandableContent>
 
@@ -211,12 +300,24 @@ export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
               label="Gross contract value"
               value={currencyFormat(result.grossContractValue)}
               bold
+              tooltip={
+                <Tooltip
+                  triggerLabel="Gross contract value information"
+                  content="Your total income before any deductions — days worked multiplied by your daily rate. Inside IR35 this is treated as employment income, not company revenue."
+                />
+              }
             />
             {convertToPence(expenses) > 0 && (
               <Row
                 label="Allowable expenses"
                 value={`− ${currencyFormat(convertToPence(expenses))}`}
                 muted
+                tooltip={
+                  <Tooltip
+                    triggerLabel="Allowable expenses information"
+                    content="Legitimate business expenses deducted from your gross contract value before employer NI and PAYE are calculated."
+                  />
+                }
               />
             )}
             {convertToPence(pensionContributions) > 0 && (
@@ -224,17 +325,51 @@ export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
                 label="Pension contributions"
                 value={`− ${currencyFormat(convertToPence(pensionContributions))}`}
                 muted
+                tooltip={
+                  <Tooltip
+                    triggerLabel="Pension contributions information"
+                    content="Employer pension contributions deducted before PAYE is calculated, reducing the salary on which income tax and NI are charged."
+                  />
+                }
               />
             )}
             <Row
               label="Employer NI"
               value={`− ${currencyFormat(result.employerNI)}`}
               muted
+              tooltip={
+                <Tooltip
+                  triggerLabel="Employer NI information"
+                  content={
+                    <>
+                      <p>
+                        National Insurance paid by the fee-payer (your client or
+                        agency) on your deemed salary. Inside IR35, this is
+                        deducted from your gross contract value before your PAYE
+                        salary is calculated.
+                      </p>
+                      <p className="mt-1">
+                        Rate: {taxes.EMPLOYER_NI_RATE_PERCENTAGE}% above the £
+                        {(
+                          taxes.EMPLOYER_NI_SECONDARY_THRESHOLD_PENCE / 100
+                        ).toLocaleString()}{" "}
+                        secondary threshold.
+                      </p>
+                    </>
+                  }
+                />
+              }
             />
             <Row
               label="Gross PAYE salary"
               value={currencyFormat(result.grossSalary)}
               bold
+              tooltip={
+                <Tooltip
+                  triggerLabel="Gross PAYE salary information"
+                  content="Your gross contract value minus allowable expenses, pension contributions, and employer NI. This is the deemed employment income on which income tax and employee NI are calculated."
+                />
+              }
             />
           </SectionCard>
 
@@ -255,6 +390,12 @@ export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
               label="Total income tax"
               value={currencyFormat(result.incomeTax)}
               bold
+              tooltip={
+                <Tooltip
+                  triggerLabel="Total income tax information"
+                  content="Income tax calculated on your gross PAYE salary above the personal allowance. The rate depends on how much of your salary falls into each band — basic (20%), higher (40%), and additional (45%)."
+                />
+              }
             />
           </SectionCard>
 
@@ -265,13 +406,23 @@ export const InsideIR35Form = ({ hidden }: { hidden: boolean }) => {
               label="Employee NI"
               value={currencyFormat(result.employeeNI)}
               bold
+              tooltip={
+                <Tooltip
+                  triggerLabel="Employee NI information"
+                  content={`National Insurance deducted from your PAYE salary. You pay ${taxes.EMPLOYEE_NI_BASIC_RATE_PERCENTAGE}% on earnings between £${(taxes.EMPLOYEE_NI_PRIMARY_THRESHOLD_PENCE / 100).toLocaleString()} and ${currencyFormat(taxes.EMPLOYEE_NI_UPPER_EARNINGS_LIMIT_PENCE)}, then 2% above that.`}
+                />
+              }
             />
           </SectionCard>
 
           {studentLoanRepayment > 0 && (
             <SectionCard title="Student loan repayment">
               <Row
-                label={studentLoanPlan === "plan1" ? "Plan 1" : "Plan 2"}
+                label={LOAN_PLAN_OPTIONS.filter((o) =>
+                  studentLoanPlans.includes(o.value),
+                )
+                  .map((o) => o.label)
+                  .join(" + ")}
                 value={currencyFormat(studentLoanRepayment)}
                 bold
               />

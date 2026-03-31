@@ -1,4 +1,5 @@
 export { TextInput } from "./TextInput";
+export { Tooltip } from "./Tooltip";
 export { SelectInput } from "./SelectInput";
 export { Button } from "./Button";
 export { ExpandableContent } from "./ExpandableContent";
