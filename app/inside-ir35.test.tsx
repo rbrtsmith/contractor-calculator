@@ -398,101 +398,101 @@ test("inside IR35: switching back to Outside IR35 tab hides the inside form", as
 });
 
 // Tooltip integration tests
-test("inside IR35: gross contract value tooltip shows on click", async () => {
+test("inside IR35: gross contract value tooltip shows on hover", async () => {
   const user = userEvent.setup();
   render(<Home />);
   await user.click(screen.getByRole("button", { name: /inside ir35/i }));
-  await user.click(
+  await user.hover(
     screen.getByRole("button", { name: "Gross contract value information" }),
   );
-  expect(screen.getByRole("tooltip")).toBeInTheDocument();
+  expect(await screen.findByRole("tooltip")).toBeInTheDocument();
 });
 
-test("inside IR35: employer NI tooltip shows on click", async () => {
+test("inside IR35: employer NI tooltip shows on hover", async () => {
   const user = userEvent.setup();
   render(<Home />);
   await user.click(screen.getByRole("button", { name: /inside ir35/i }));
-  await user.click(
+  await user.hover(
     screen.getByRole("button", { name: "Employer NI information" }),
   );
-  expect(screen.getByRole("tooltip")).toBeInTheDocument();
+  expect(await screen.findByRole("tooltip")).toBeInTheDocument();
 });
 
-test("inside IR35: gross PAYE salary tooltip shows on click", async () => {
+test("inside IR35: gross PAYE salary tooltip shows on hover", async () => {
   const user = userEvent.setup();
   render(<Home />);
   await user.click(screen.getByRole("button", { name: /inside ir35/i }));
-  await user.click(
+  await user.hover(
     screen.getByRole("button", { name: "Gross PAYE salary information" }),
   );
-  expect(screen.getByRole("tooltip")).toBeInTheDocument();
+  expect(await screen.findByRole("tooltip")).toBeInTheDocument();
 });
 
-test("inside IR35: total income tax tooltip shows on click", async () => {
+test("inside IR35: total income tax tooltip shows on hover", async () => {
   const user = userEvent.setup();
   render(<Home />);
   await user.click(screen.getByRole("button", { name: /inside ir35/i }));
-  await user.click(
+  await user.hover(
     screen.getByRole("button", { name: "Total income tax information" }),
   );
-  expect(screen.getByRole("tooltip")).toBeInTheDocument();
+  expect(await screen.findByRole("tooltip")).toBeInTheDocument();
 });
 
-test("inside IR35: employee NI tooltip shows on click", async () => {
+test("inside IR35: employee NI tooltip shows on hover", async () => {
   const user = userEvent.setup();
   render(<Home />);
   await user.click(screen.getByRole("button", { name: /inside ir35/i }));
-  await user.click(
+  await user.hover(
     screen.getByRole("button", { name: "Employee NI information" }),
   );
-  expect(screen.getByRole("tooltip")).toBeInTheDocument();
+  expect(await screen.findByRole("tooltip")).toBeInTheDocument();
 });
 
-test("inside IR35: daily rate tooltip shows on click", async () => {
+test("inside IR35: daily rate tooltip shows on hover", async () => {
   const user = userEvent.setup();
   render(<Home />);
   await user.click(screen.getByRole("button", { name: /inside ir35/i }));
-  await user.click(
+  await user.hover(
     screen.getByRole("button", { name: "Daily rate information" }),
   );
-  expect(screen.getByRole("tooltip")).toBeInTheDocument();
+  expect(await screen.findByRole("tooltip")).toBeInTheDocument();
 });
 
-test("inside IR35: annual allowable expenses tooltip shows on click", async () => {
+test("inside IR35: annual allowable expenses tooltip shows on hover", async () => {
   const user = userEvent.setup();
   render(<Home />);
   await user.click(screen.getByRole("button", { name: /inside ir35/i }));
   await user.click(screen.getByRole("button", { name: /^expenses$/i }));
-  await user.click(
+  await user.hover(
     screen.getByRole("button", {
       name: "Annual allowable expenses information",
     }),
   );
-  expect(screen.getByRole("tooltip")).toBeInTheDocument();
+  expect(await screen.findByRole("tooltip")).toBeInTheDocument();
 });
 
-test("inside IR35: annual pension contributions tooltip shows on click", async () => {
+test("inside IR35: annual pension contributions tooltip shows on hover", async () => {
   const user = userEvent.setup();
   render(<Home />);
   await user.click(screen.getByRole("button", { name: /inside ir35/i }));
   await user.click(screen.getByRole("button", { name: /^expenses$/i }));
-  await user.click(
+  await user.hover(
     screen.getByRole("button", {
       name: "Annual pension contributions information",
     }),
   );
-  expect(screen.getByRole("tooltip")).toBeInTheDocument();
+  expect(await screen.findByRole("tooltip")).toBeInTheDocument();
 });
 
-test("inside IR35: student loan plan tooltip shows on click", async () => {
+test("inside IR35: student loan plan tooltip shows on hover", async () => {
   const user = userEvent.setup();
   render(<Home />);
   await user.click(screen.getByRole("button", { name: /inside ir35/i }));
   await user.click(screen.getByRole("button", { name: /^student loan$/i }));
-  await user.click(
+  await user.hover(
     screen.getByRole("button", { name: "Student loan plan information" }),
   );
-  expect(screen.getByRole("tooltip")).toBeInTheDocument();
+  expect(await screen.findByRole("tooltip")).toBeInTheDocument();
 });
 
 // I-3: Switching back from weekly to annual inside IR35 form — annual days input reappears.

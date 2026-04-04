@@ -103,6 +103,7 @@ export const OutsideIR35Form = ({ hidden }: { hidden: boolean }) => {
     totalRevenue,
     corporationTaxDue,
     maximumAllowableDividendDrawdown,
+    maximumSalaryPerDirectorPence,
     totalTaxableIncome,
     directorTaxableIncome,
     dividendTaxBreakdown,
@@ -119,6 +120,8 @@ export const OutsideIR35Form = ({ hidden }: { hidden: boolean }) => {
     totalClass1aNI,
     directorDividendTaxAdjustment,
     directorAfterTaxPay,
+    directorSalaryIncomeTax,
+    anySalaryIncomeTax,
   } = computeOutsideIR35({
     numberOfDaysWorked: Number(effectiveDaysWorked),
     dailyRate: convertToPence(dailyRate),
@@ -130,6 +133,18 @@ export const OutsideIR35Form = ({ hidden }: { hidden: boolean }) => {
     directorEVP11dPence: syncedEVP11d.map((p11d) => convertToPence(p11d)),
     directorLoanPlans: syncedLoanPlans,
     taxes,
+  });
+
+  const totalFundableForSalary =
+    totalRevenue -
+    totalGeneralExpensesPence -
+    convertToPence(pensionContributions);
+  const directorMaxSalaryPence = syncedSalaries.map((_, i) => {
+    const otherSalaries = syncedSalaries.reduce(
+      (sum, s, j) => (j !== i ? sum + convertToPence(s) : sum),
+      0,
+    );
+    return Math.max(0, totalFundableForSalary - otherSalaries);
   });
 
   const wfhAllowancePencePerDirector = wfhAllowance ? 31200 : 0;
@@ -521,12 +536,13 @@ export const OutsideIR35Form = ({ hidden }: { hidden: boolean }) => {
                 );
               }}
             >
-              Max out
+              Efficient
             </Button>
           }
           type="number"
           step="0.01"
           min={0}
+          max={convertToPounds(maximumSalaryPerDirectorPence)}
           maxLength={6}
           name="salaryDrawdown"
           value={salaryDrawdown}
@@ -594,6 +610,7 @@ export const OutsideIR35Form = ({ hidden }: { hidden: boolean }) => {
                   type="number"
                   step="0.01"
                   min={0}
+                  max={convertToPounds(maximumSalaryPerDirectorPence)}
                   aria-label="Annual salary drawdown per director"
                   name="salaryDrawdown"
                   value={salaryDrawdown}
@@ -615,7 +632,7 @@ export const OutsideIR35Form = ({ hidden }: { hidden: boolean }) => {
                       );
                     }}
                   >
-                    Max out
+                    Efficient
                   </Button>
                 </div>
               </div>
@@ -632,6 +649,7 @@ export const OutsideIR35Form = ({ hidden }: { hidden: boolean }) => {
                         type="number"
                         step="0.01"
                         min={0}
+                        max={convertToPounds(directorMaxSalaryPence[i])}
                         aria-label={`Director ${i + 1} annual salary`}
                         value={salary}
                         onChange={(e) => {
@@ -655,7 +673,7 @@ export const OutsideIR35Form = ({ hidden }: { hidden: boolean }) => {
                             setDirectorSalaries(updated);
                           }}
                         >
-                          Max out
+                          Efficient
                         </Button>
                       </div>
                     </div>
@@ -773,6 +791,8 @@ export const OutsideIR35Form = ({ hidden }: { hidden: boolean }) => {
         syncedLoanPlans={syncedLoanPlans}
         studentLoanRepayments={studentLoanRepayments}
         anyStudentLoan={anyStudentLoan}
+        directorSalaryIncomeTax={directorSalaryIncomeTax}
+        anySalaryIncomeTax={anySalaryIncomeTax}
         totalAfterTaxPay={adjustedTotalAfterTaxPay}
         directorAfterTaxPay={adjustedDirectorAfterTaxPay}
       />

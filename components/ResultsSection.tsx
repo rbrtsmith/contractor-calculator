@@ -40,6 +40,8 @@ interface Props {
   syncedLoanPlans: string[][];
   studentLoanRepayments: number[];
   anyStudentLoan: boolean;
+  directorSalaryIncomeTax: number[];
+  anySalaryIncomeTax: boolean;
   totalAfterTaxPay: number;
   directorAfterTaxPay: number[];
 }
@@ -194,6 +196,8 @@ export const ResultsSection = ({
   syncedLoanPlans,
   studentLoanRepayments,
   anyStudentLoan,
+  directorSalaryIncomeTax,
+  anySalaryIncomeTax,
   totalAfterTaxPay,
   directorAfterTaxPay,
 }: Props) => {
@@ -402,6 +406,41 @@ export const ResultsSection = ({
               />
             }
           />
+        </SectionCard>
+      )}
+
+      {/* Salary income tax */}
+      {anySalaryIncomeTax && (
+        <SectionCard title="Salary income tax">
+          {numDirs === 1 ? (
+            <Row
+              label="Salary income tax"
+              value={currencyFormat(directorSalaryIncomeTax[0])}
+              bold
+              tooltip={
+                <Tooltip
+                  triggerLabel="Salary income tax information"
+                  content="Income tax you pay personally on salary above your personal allowance. Charged at 20% (basic), 40% (higher), or 45% (additional) depending on how much salary falls into each band."
+                />
+              }
+            />
+          ) : (
+            directorSalaryIncomeTax.map((tax, i) =>
+              tax > 0 ? (
+                <Row
+                  key={i}
+                  label={`Director ${i + 1} salary income tax`}
+                  value={currencyFormat(tax)}
+                  tooltip={
+                    <Tooltip
+                      triggerLabel={`Director ${i + 1} salary income tax information`}
+                      content="Income tax paid personally on salary above the personal allowance."
+                    />
+                  }
+                />
+              ) : null,
+            )
+          )}
         </SectionCard>
       )}
 

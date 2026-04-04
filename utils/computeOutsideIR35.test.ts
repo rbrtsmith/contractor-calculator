@@ -180,6 +180,106 @@ describe("computeOutsideIR35", () => {
     expect(result.anyStudentLoan).toBe(false);
   });
 
+  it("salary above personal allowance — directorSalaryIncomeTax returned and anySalaryIncomeTax true", () => {
+    // Salary £20,000. PA £12,570. Taxable salary = £7,430. Income tax = £7,430 × 20% = £1,486.
+    const result = computeOutsideIR35({
+      numberOfDaysWorked: 200,
+      dailyRate: p(500),
+      directorSalariesPence: [p(20000)],
+      numberOfDirectors: 1,
+      generalExpenses: 0,
+      pensionContributions: 0,
+      dividendDrawdown: 0,
+      directorEVP11dPence: [0],
+      directorLoanPlans: [[]],
+      taxes,
+    });
+
+    const taxableSalary = p(20000) - taxes.TAX_FREE_PERSONAL_ALLOWANCE_PENCE;
+    expect(result.directorSalaryIncomeTax[0]).toBeCloseTo(
+      taxableSalary * 0.2,
+      0,
+    );
+    expect(result.anySalaryIncomeTax).toBe(true);
+  });
+
+  it("salary at or below personal allowance — anySalaryIncomeTax is false", () => {
+    const result = computeOutsideIR35({
+      numberOfDaysWorked: 200,
+      dailyRate: p(500),
+      directorSalariesPence: [p(12564)],
+      numberOfDirectors: 1,
+      generalExpenses: 0,
+      pensionContributions: 0,
+      dividendDrawdown: 0,
+      directorEVP11dPence: [0],
+      directorLoanPlans: [[]],
+      taxes,
+    });
+
+    expect(result.directorSalaryIncomeTax[0]).toBe(0);
+    expect(result.anySalaryIncomeTax).toBe(false);
+  });
+
+  it("maximumSalaryPerDirectorPence = (revenue − expenses) / numDirs", () => {
+    // Revenue £100,000, expenses £5,000, pension £3,000, 2 directors
+    // Max salary per director = (£100,000 − £5,000 − £3,000) / 2 = £46,000
+    const result = computeOutsideIR35({
+      numberOfDaysWorked: 200,
+      dailyRate: p(500),
+      directorSalariesPence: [p(12564), p(12564)],
+      numberOfDirectors: 2,
+      generalExpenses: p(5000),
+      pensionContributions: p(3000),
+      dividendDrawdown: 0,
+      directorEVP11dPence: [0, 0],
+      directorLoanPlans: [[], []],
+      taxes,
+    });
+
+    expect(result.maximumSalaryPerDirectorPence).toBe(p(46000));
+  });
+
+  it("salary above personal allowance incurs income tax deducted from net pay", () => {
+    // Salary £20,000. Personal allowance £12,570. Taxable salary = £7,430. Income tax = £7,430 × 20% = £1,486.
+    // No dividends, so net pay = £20,000 − £1,486 = £18,514.
+    const result = computeOutsideIR35({
+      numberOfDaysWorked: 200,
+      dailyRate: p(500),
+      directorSalariesPence: [p(20000)],
+      numberOfDirectors: 1,
+      generalExpenses: 0,
+      pensionContributions: 0,
+      dividendDrawdown: 0,
+      directorEVP11dPence: [0],
+      directorLoanPlans: [[]],
+      taxes,
+    });
+
+    const taxableSalary = p(20000) - taxes.TAX_FREE_PERSONAL_ALLOWANCE_PENCE;
+    const expectedIncomeTax = taxableSalary * 0.2;
+    const expectedNetPay = p(20000) - expectedIncomeTax;
+    expect(result.directorAfterTaxPay[0]).toBeCloseTo(expectedNetPay, 0);
+  });
+
+  it("salary at personal allowance — no income tax on salary", () => {
+    // Salary exactly at £12,570 personal allowance — no income tax on salary
+    const result = computeOutsideIR35({
+      numberOfDaysWorked: 200,
+      dailyRate: p(500),
+      directorSalariesPence: [p(12570)],
+      numberOfDirectors: 1,
+      generalExpenses: 0,
+      pensionContributions: 0,
+      dividendDrawdown: 0,
+      directorEVP11dPence: [0],
+      directorLoanPlans: [[]],
+      taxes,
+    });
+
+    expect(result.directorAfterTaxPay[0]).toBe(p(12570));
+  });
+
   it("maxTaxEfficientDividendPence caps at higher rate threshold", () => {
     // With salary at max (£12,564), max efficient dividend = £50,270 − £12,564 = £37,706
     // capped by available profit

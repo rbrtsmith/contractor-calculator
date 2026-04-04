@@ -253,7 +253,7 @@ test("outside IR35: additional rate with zero personal allowance — 400 days at
 
   expect(
     within(screen.getByRole("region", { name: "Net pay" })).getByText(
-      "£95,844.49",
+      "£93,331.69",
     ),
   ).toBeInTheDocument();
 });
@@ -646,7 +646,7 @@ test("outside IR35: partial personal allowance taper — 200 days at £700/day w
 
   expect(
     within(screen.getByRole("region", { name: "Net pay" })).getByText(
-      "£79,869.25",
+      "£79,614.05",
     ),
   ).toBeInTheDocument();
 });
@@ -769,9 +769,9 @@ test("outside IR35: days mode toggle — switch to weekly then back to annual re
   ).not.toBeInTheDocument();
 });
 
-// O-2: "Max out" button sets salary to tax-efficient value £12,564.
-// Start with a non-default salary, click Max out, confirm the field updates.
-test("outside IR35: Max out button sets salary to tax-efficient value in 2026/27", async () => {
+// O-2: "Efficient" button sets salary to tax-efficient value £12,564.
+// Start with a non-default salary, click Efficient, confirm the field updates.
+test("outside IR35: Efficient button sets salary to tax-efficient value in 2026/27", async () => {
   const user = userEvent.setup();
   render(<Home />);
   await user.selectOptions(
@@ -785,7 +785,11 @@ test("outside IR35: Max out button sets salary to tax-efficient value in 2026/27
   await user.clear(salaryInput);
   await user.type(salaryInput, "5000");
 
-  await user.click(screen.getByRole("button", { name: /max out/i }));
+  // The salary Efficient button is the first one; dividend Efficient is after it
+  const [salaryEfficient] = screen.getAllByRole("button", {
+    name: /^efficient$/i,
+  });
+  await user.click(salaryEfficient);
 
   expect(salaryInput).toHaveValue(12564);
 });
@@ -801,7 +805,10 @@ test("outside IR35: Efficient button sets dividend to basic rate ceiling in 2026
     "2026/27",
   );
 
-  await user.click(screen.getByRole("button", { name: /efficient/i }));
+  const efficientButtons = screen.getAllByRole("button", {
+    name: /^efficient$/i,
+  });
+  await user.click(efficientButtons[efficientButtons.length - 1]);
 
   const dividendInput = screen.getByRole("spinbutton", {
     name: /annual dividend drawdown/i,
@@ -1202,7 +1209,8 @@ test("outside IR35: max tax-efficient dividend hint uses highest salary director
   // The Efficient button sets dividend to maxTaxEfficientDividendPence.
   // It should reflect Dir2 (highest salary £12,564): £50,270 − £12,564 = £37,706
   // NOT Dir1's £41,270.
-  await user.click(screen.getByRole("button", { name: /efficient/i }));
+  const efficientBtns = screen.getAllByRole("button", { name: /^efficient$/i });
+  await user.click(efficientBtns[efficientBtns.length - 1]);
   expect(
     screen.getByRole("spinbutton", { name: /annual dividend drawdown/i }),
   ).toHaveValue(37706);
@@ -1214,34 +1222,34 @@ test("outside IR35: Annual expenses tooltip is shown when trigger is focused", a
   const user = userEvent.setup();
   render(<Home />);
   await user.click(screen.getByRole("button", { name: /^expenses$/i }));
-  await user.click(
+  await user.hover(
     screen.getByRole("button", { name: "Annual expenses information" }),
   );
-  expect(screen.getByRole("tooltip")).toBeInTheDocument();
+  expect(await screen.findByRole("tooltip")).toBeInTheDocument();
 });
 
 test("outside IR35: Work from home allowance tooltip is shown when trigger is focused", async () => {
   const user = userEvent.setup();
   render(<Home />);
   await user.click(screen.getByRole("button", { name: /^expenses$/i }));
-  await user.click(
+  await user.hover(
     screen.getByRole("button", {
       name: "Work from home allowance information",
     }),
   );
-  expect(screen.getByRole("tooltip")).toBeInTheDocument();
+  expect(await screen.findByRole("tooltip")).toBeInTheDocument();
 });
 
 test("outside IR35: Annual pension contributions tooltip is shown when trigger is focused", async () => {
   const user = userEvent.setup();
   render(<Home />);
   await user.click(screen.getByRole("button", { name: /^expenses$/i }));
-  await user.click(
+  await user.hover(
     screen.getByRole("button", {
       name: "Annual pension contributions information",
     }),
   );
-  expect(screen.getByRole("tooltip")).toBeInTheDocument();
+  expect(await screen.findByRole("tooltip")).toBeInTheDocument();
 });
 
 test("outside IR35: taxable income section tooltips are shown when triggers are focused", async () => {
@@ -1258,8 +1266,8 @@ test("outside IR35: taxable income section tooltips are shown when triggers are 
     "Taxable income information",
     "Personal allowance information",
   ]) {
-    await user.click(screen.getByRole("button", { name }));
-    expect(screen.getByRole("tooltip")).toBeInTheDocument();
+    await user.hover(screen.getByRole("button", { name }));
+    expect(await screen.findByRole("tooltip")).toBeInTheDocument();
     await user.keyboard("{Escape}");
   }
 });
@@ -1283,8 +1291,8 @@ test("outside IR35: company overview tooltips are shown when triggers are focuse
     "Corporation tax information",
     "Retained profits information",
   ]) {
-    await user.click(screen.getByRole("button", { name }));
-    expect(screen.getByRole("tooltip")).toBeInTheDocument();
+    await user.hover(screen.getByRole("button", { name }));
+    expect(await screen.findByRole("tooltip")).toBeInTheDocument();
     await user.keyboard("{Escape}");
   }
 });
@@ -1292,12 +1300,12 @@ test("outside IR35: company overview tooltips are shown when triggers are focuse
 test("outside IR35: dividend drawdown tooltip is shown when trigger is focused", async () => {
   const user = userEvent.setup();
   render(<Home />);
-  await user.click(
+  await user.hover(
     screen.getByRole("button", {
       name: "Annual dividend drawdown information",
     }),
   );
-  expect(screen.getByRole("tooltip")).toBeInTheDocument();
+  expect(await screen.findByRole("tooltip")).toBeInTheDocument();
 });
 
 test("outside IR35: salary drawdown tooltip is shown when trigger is focused (single director)", async () => {
@@ -1307,50 +1315,50 @@ test("outside IR35: salary drawdown tooltip is shown when trigger is focused (si
     screen.getByRole("combobox", { name: /tax year/i }),
     "2026/27",
   );
-  await user.click(
+  await user.hover(
     screen.getByRole("button", { name: "Annual salary drawdown information" }),
   );
-  expect(screen.getByRole("tooltip")).toBeInTheDocument();
+  expect(await screen.findByRole("tooltip")).toBeInTheDocument();
 });
 
 test("outside IR35: Student loan plan tooltip is shown when trigger is focused", async () => {
   const user = userEvent.setup();
   render(<Home />);
   await user.click(screen.getByRole("button", { name: /^student loan$/i }));
-  await user.click(
+  await user.hover(
     screen.getByRole("button", { name: "Student loan plan information" }),
   );
-  expect(screen.getByRole("tooltip")).toBeInTheDocument();
+  expect(await screen.findByRole("tooltip")).toBeInTheDocument();
 });
 
 test("outside IR35: EV company car P11D tooltip is shown when trigger is focused", async () => {
   const user = userEvent.setup();
   render(<Home />);
   await user.click(screen.getByRole("button", { name: /^ev company car$/i }));
-  await user.click(
+  await user.hover(
     screen.getByRole("button", {
       name: "EV company car P11D value information",
     }),
   );
-  expect(screen.getByRole("tooltip")).toBeInTheDocument();
+  expect(await screen.findByRole("tooltip")).toBeInTheDocument();
 });
 
 test("outside IR35: daily rate tooltip is shown when trigger is clicked", async () => {
   const user = userEvent.setup();
   render(<Home />);
-  await user.click(
+  await user.hover(
     screen.getByRole("button", { name: "Daily rate information" }),
   );
-  expect(screen.getByRole("tooltip")).toBeInTheDocument();
+  expect(await screen.findByRole("tooltip")).toBeInTheDocument();
 });
 
 test("outside IR35: number of directors tooltip is shown when trigger is clicked", async () => {
   const user = userEvent.setup();
   render(<Home />);
-  await user.click(
+  await user.hover(
     screen.getByRole("button", { name: "Number of directors information" }),
   );
-  expect(screen.getByRole("tooltip")).toBeInTheDocument();
+  expect(await screen.findByRole("tooltip")).toBeInTheDocument();
 });
 
 test("outside IR35: total dividend tax tooltip is shown when trigger is clicked", async () => {
@@ -1362,10 +1370,10 @@ test("outside IR35: total dividend tax tooltip is shown when trigger is clicked"
     dividends: "30000",
     taxYear: "2026/27",
   });
-  await user.click(
+  await user.hover(
     screen.getByRole("button", { name: "Total dividend tax information" }),
   );
-  expect(screen.getByRole("tooltip")).toBeInTheDocument();
+  expect(await screen.findByRole("tooltip")).toBeInTheDocument();
 });
 
 test("outside IR35: EV BiK results tooltips are shown when triggers are clicked", async () => {
@@ -1382,8 +1390,8 @@ test("outside IR35: EV BiK results tooltips are shown when triggers are clicked"
     "Income tax on BiK information",
     "Class 1A NI information",
   ]) {
-    await user.click(screen.getByRole("button", { name }));
-    expect(screen.getByRole("tooltip")).toBeInTheDocument();
+    await user.hover(screen.getByRole("button", { name }));
+    expect(await screen.findByRole("tooltip")).toBeInTheDocument();
     await user.keyboard("{Escape}");
   }
 });
@@ -1399,17 +1407,17 @@ test("outside IR35: student loan repayment tooltip is shown when trigger is clic
     taxYear: "2026/27",
     studentLoanPlan: "plan1",
   });
-  await user.click(
+  await user.hover(
     screen.getByRole("button", { name: "Student loan repayment information" }),
   );
-  expect(screen.getByRole("tooltip")).toBeInTheDocument();
+  expect(await screen.findByRole("tooltip")).toBeInTheDocument();
 });
 
 test("outside IR35: net pay tooltip is shown when trigger is clicked", async () => {
   const user = userEvent.setup();
   render(<Home />);
-  await user.click(screen.getByRole("button", { name: "Net pay information" }));
-  expect(screen.getByRole("tooltip")).toBeInTheDocument();
+  await user.hover(screen.getByRole("button", { name: "Net pay information" }));
+  expect(await screen.findByRole("tooltip")).toBeInTheDocument();
 });
 
 // 100 days × £500 = £50,000 gross revenue. Salary £12,564, no dividends drawn.
@@ -1461,4 +1469,65 @@ test("outside IR35: postgrad loan deducted from net pay — 180 days at £450/da
   expect(
     screen.getByRole("definition", { name: /postgrad loan/i }),
   ).toHaveTextContent("£1,293.84");
+});
+
+// Salary £20,000 > personal allowance £12,570 → income tax on excess.
+// Taxable salary = £7,430. Income tax = £7,430 × 20% = £1,486.00.
+// Salary income tax section should appear in results.
+test("outside IR35: salary above personal allowance — salary income tax section shown", async () => {
+  const user = userEvent.setup();
+  render(<Home />);
+  await setupOutsideIR35(user, {
+    days: "200",
+    rate: "500",
+    dividends: "0",
+    taxYear: "2026/27",
+  });
+  // Override default salary to £20,000
+  const salaryInput = screen.getByRole("spinbutton", {
+    name: /annual salary drawdown/i,
+  });
+  await user.clear(salaryInput);
+  await user.type(salaryInput, "20000");
+
+  expect(
+    screen.getByRole("region", { name: /salary income tax/i }),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByRole("definition", { name: /salary income tax/i }),
+  ).toHaveTextContent("£1,486.00");
+});
+
+// Salary at default £12,564 — below personal allowance £12,570 → no salary income tax section.
+test("outside IR35: salary below personal allowance — no salary income tax section", async () => {
+  const user = userEvent.setup();
+  render(<Home />);
+  await setupOutsideIR35(user, {
+    days: "200",
+    rate: "500",
+    dividends: "0",
+    taxYear: "2026/27",
+  });
+
+  expect(
+    screen.queryByRole("region", { name: /salary income tax/i }),
+  ).not.toBeInTheDocument();
+});
+
+// 10 days × £500 = £5,000 revenue. Max salary = £5,000 (no expenses).
+// Salary input should have max="5000" so entering more triggers browser :invalid state.
+test("outside IR35: salary input max equals company revenue when salary would exceed available funds", async () => {
+  const user = userEvent.setup();
+  render(<Home />);
+  await setupOutsideIR35(user, {
+    days: "10",
+    rate: "500",
+    dividends: "0",
+    taxYear: "2026/27",
+  });
+
+  const salaryInput = screen.getByRole("spinbutton", {
+    name: /annual salary drawdown/i,
+  });
+  expect(salaryInput).toHaveAttribute("max", "5000");
 });

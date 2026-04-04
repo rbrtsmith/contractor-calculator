@@ -174,8 +174,38 @@ export const computeOutsideIR35 = ({
       taxes,
     });
 
+    // taxableSalary = salary above the effective personal allowance
+    const taxableSalary = Math.max(
+      0,
+      salaryDrawdown - effectivePersonalAllowancePence,
+    );
+    // Basic band width is HIGHER_DIVIDEND_TAX_THRESHOLD_PENCE (e.g. £37,700).
+    // Additional threshold above allowance = where 45% kicks in relative to taxable income.
+    const additionalThresholdAboveAllowance =
+      ADDITIONAL_DIVIDEND_TAX_THRESHOLD_PENCE - effectivePersonalAllowancePence;
+    const salaryInBasic = Math.max(
+      0,
+      Math.min(taxableSalary, HIGHER_DIVIDEND_TAX_THRESHOLD_PENCE),
+    );
+    const salaryInHigher = Math.max(
+      0,
+      Math.min(taxableSalary, additionalThresholdAboveAllowance) -
+        HIGHER_DIVIDEND_TAX_THRESHOLD_PENCE,
+    );
+    const salaryInAdditional = Math.max(
+      0,
+      taxableSalary - additionalThresholdAboveAllowance,
+    );
+    const salaryIncomeTax =
+      salaryInBasic * INCOME_TAX_BASIC_RATE +
+      salaryInHigher * INCOME_TAX_HIGHER_RATE +
+      salaryInAdditional * INCOME_TAX_ADDITIONAL_RATE;
+
     const afterTaxPay =
-      dividendDrawdown + salaryDrawdown - dividendTaxBreakdown.total;
+      dividendDrawdown +
+      salaryDrawdown -
+      dividendTaxBreakdown.total -
+      salaryIncomeTax;
 
     return {
       salaryDrawdown,
@@ -187,6 +217,7 @@ export const computeOutsideIR35 = ({
       studentLoanRepayment,
       afterTaxPay,
       totalIncomePence,
+      salaryIncomeTax,
     };
   });
 
@@ -234,12 +265,19 @@ export const computeOutsideIR35 = ({
     (d) => d.dividendTaxAdjustment,
   );
 
+  const directorSalaryIncomeTax = directorResults.map((d) => d.salaryIncomeTax);
+  const anySalaryIncomeTax = directorSalaryIncomeTax.some((t) => t > 0);
+
+  const maximumSalaryPerDirectorPence =
+    (totalRevenue - totalExpenses) / numberOfDirectors;
+
   return {
     totalRevenue,
     totalTaxableIncome,
     directorTaxableIncome,
     corporationTaxDue,
     maximumAllowableDividendDrawdown,
+    maximumSalaryPerDirectorPence,
     dividendTaxBreakdown: rep.dividendTaxBreakdown,
     directorDividendTaxBreakdown: directorResults.map(
       (d) => d.dividendTaxBreakdown,
@@ -258,5 +296,7 @@ export const computeOutsideIR35 = ({
     totalClass1aNI,
     directorDividendTaxAdjustment,
     directorAfterTaxPay: directorResults.map((d) => d.afterTaxPay),
+    directorSalaryIncomeTax,
+    anySalaryIncomeTax,
   };
 };
